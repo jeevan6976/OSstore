@@ -146,7 +146,6 @@ export default function ToolCard({ tool }: { tool: Tool }) {
             href={p.url || '#'}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
             className={`install-btn ${p.color} rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm`}
           >
             <span>{p.icon}</span>
