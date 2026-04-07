@@ -35,6 +35,14 @@ class Tool(Base):
     last_pushed_at = Column(DateTime, nullable=True)
     last_commit_at = Column(DateTime, nullable=True)
 
+    # App-store fields
+    package_name = Column(String(512), nullable=True, index=True)
+    apk_url = Column(String(2048), nullable=True)
+    download_url = Column(String(2048), nullable=True)
+    app_type = Column(String(32), nullable=True, index=True)
+    icon_url = Column(String(2048), nullable=True)
+    latest_version = Column(String(128), nullable=True)
+
     trust_score = relationship("TrustScore", back_populates="tool", uselist=False)
     risk_flags = relationship("RiskFlag", back_populates="tool")
 
@@ -69,3 +77,30 @@ class RiskFlag(Base):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    # Add new columns if they don't exist (safe for re-runs)
+    _add_columns_if_missing()
+
+
+def _add_columns_if_missing():
+    """Run ALTER TABLE for new columns — safe to call repeatedly."""
+    alter_statements = [
+        "ALTER TABLE tools ADD COLUMN IF NOT EXISTS package_name VARCHAR(512)",
+        "ALTER TABLE tools ADD COLUMN IF NOT EXISTS apk_url VARCHAR(2048)",
+        "ALTER TABLE tools ADD COLUMN IF NOT EXISTS download_url VARCHAR(2048)",
+        "ALTER TABLE tools ADD COLUMN IF NOT EXISTS app_type VARCHAR(32)",
+        "ALTER TABLE tools ADD COLUMN IF NOT EXISTS icon_url VARCHAR(2048)",
+        "ALTER TABLE tools ADD COLUMN IF NOT EXISTS latest_version VARCHAR(128)",
+    ]
+    index_statements = [
+        "CREATE INDEX IF NOT EXISTS ix_tools_package_name ON tools(package_name)",
+        "CREATE INDEX IF NOT EXISTS ix_tools_app_type ON tools(app_type)",
+    ]
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            for stmt in alter_statements + index_statements:
+                conn.execute(text(stmt))
+            conn.commit()
+        print("[DB] App-store columns migration complete.")
+    except Exception as e:
+        print(f"[DB] Migration note: {e}")

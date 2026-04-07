@@ -32,40 +32,77 @@ function parseTopics(topics: string | null): string[] {
   }
 }
 
+function sourceBadge(source: string) {
+  if (source === 'fdroid') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs font-medium text-blue-700">
+        📦 F-Droid
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 border border-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">
+      🐙 GitHub
+    </span>
+  );
+}
+
 export default function ToolCard({ tool }: { tool: Tool }) {
   const score = tool.trust_score?.overall ?? 0;
   const topics = parseTopics(tool.topics).slice(0, 5);
+  const hasApk = !!(tool.apk_url || tool.download_url);
+  const isApp = tool.app_type === 'app';
 
   return (
-    <a
-      href={`/tool/${tool.id}`}
-      className="group block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-brand-300 hover:shadow-md"
-    >
+    <div className="group rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-brand-300 hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          {tool.owner_avatar && (
+        <a href={`/tool/${tool.id}`} className="flex items-center gap-3 min-w-0 flex-1">
+          {(tool.icon_url || tool.owner_avatar) && (
             <img
-              src={tool.owner_avatar}
+              src={tool.icon_url || tool.owner_avatar || ''}
               alt=""
-              className="h-10 w-10 rounded-lg flex-shrink-0"
+              className="h-10 w-10 rounded-lg flex-shrink-0 object-cover"
             />
           )}
           <div className="min-w-0">
-            <h3 className="truncate text-lg font-semibold text-gray-900 group-hover:text-brand-600 transition-colors">
-              {tool.name}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="truncate text-lg font-semibold text-gray-900 group-hover:text-brand-600 transition-colors">
+                {tool.name}
+              </h3>
+              {sourceBadge(tool.source)}
+              {isApp && (
+                <span className="rounded-md bg-purple-50 border border-purple-200 px-2 py-0.5 text-xs font-medium text-purple-700">
+                  📱 App
+                </span>
+              )}
+            </div>
             <p className="truncate text-sm text-gray-500">{tool.full_name}</p>
           </div>
-        </div>
+        </a>
 
-        <div className={`flex-shrink-0 rounded-lg border px-3 py-1.5 text-sm font-bold ${trustColor(score)}`}>
-          {score.toFixed(0)}
-          <span className="ml-1 text-xs font-normal">{trustLabel(score)}</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {hasApk && (
+            <a
+              href={tool.apk_url || tool.download_url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
+            >
+              ⬇ APK
+            </a>
+          )}
+          <div className={`rounded-lg border px-3 py-1.5 text-sm font-bold ${trustColor(score)}`}>
+            {score.toFixed(0)}
+            <span className="ml-1 text-xs font-normal">{trustLabel(score)}</span>
+          </div>
         </div>
       </div>
 
       {tool.description && (
-        <p className="mt-3 line-clamp-2 text-sm text-gray-600">{tool.description}</p>
+        <a href={`/tool/${tool.id}`}>
+          <p className="mt-3 line-clamp-2 text-sm text-gray-600">{tool.description}</p>
+        </a>
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-gray-500">
@@ -75,8 +112,11 @@ export default function ToolCard({ tool }: { tool: Tool }) {
             {tool.language}
           </span>
         )}
-        <span>⭐ {tool.stars.toLocaleString()}</span>
-        <span>🍴 {tool.forks.toLocaleString()}</span>
+        {tool.stars > 0 && <span>⭐ {tool.stars.toLocaleString()}</span>}
+        {tool.forks > 0 && <span>🍴 {tool.forks.toLocaleString()}</span>}
+        {tool.latest_version && (
+          <span className="font-medium text-gray-700">v{tool.latest_version}</span>
+        )}
         <span>Updated {timeAgo(tool.last_pushed_at)}</span>
       </div>
 
@@ -106,6 +146,6 @@ export default function ToolCard({ tool }: { tool: Tool }) {
           ))}
         </div>
       )}
-    </a>
+    </div>
   );
 }

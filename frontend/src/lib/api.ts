@@ -36,6 +36,12 @@ export interface Tool {
   last_commit_at: string | null;
   created_at: string;
   updated_at: string;
+  package_name: string | null;
+  apk_url: string | null;
+  download_url: string | null;
+  app_type: string | null;
+  icon_url: string | null;
+  latest_version: string | null;
   trust_score: TrustScore | null;
   risk_flags: RiskFlag[];
 }
@@ -53,6 +59,8 @@ export async function searchTools(
   page: number = 1,
   perPage: number = 20,
   language?: string,
+  source?: string,
+  appType?: string,
 ): Promise<SearchResult> {
   const params = new URLSearchParams({
     q: query,
@@ -60,6 +68,8 @@ export async function searchTools(
     per_page: String(perPage),
   });
   if (language) params.set('language', language);
+  if (source) params.set('source', source);
+  if (appType) params.set('app_type', appType);
 
   const res = await fetch(`${API_URL}/api/search?${params.toString()}`, {
     cache: 'no-store',
@@ -67,6 +77,30 @@ export async function searchTools(
 
   if (!res.ok) {
     throw new Error(`Search failed: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function browseApps(
+  page: number = 1,
+  perPage: number = 20,
+  query: string = '',
+  source?: string,
+): Promise<SearchResult> {
+  const params = new URLSearchParams({
+    page: String(page),
+    per_page: String(perPage),
+  });
+  if (query) params.set('q', query);
+  if (source) params.set('source', source);
+
+  const res = await fetch(`${API_URL}/api/apps?${params.toString()}`, {
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Apps fetch failed: ${res.status}`);
   }
 
   return res.json();

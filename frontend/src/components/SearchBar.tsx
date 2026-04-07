@@ -3,14 +3,22 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function SearchBar({ initialQuery = '' }: { initialQuery?: string }) {
+export default function SearchBar({
+  initialQuery = '',
+  action = '/search',
+  placeholder = 'Search open-source tools, libraries, APIs...',
+}: {
+  initialQuery?: string;
+  action?: string;
+  placeholder?: string;
+}) {
   const [query, setQuery] = useState(initialQuery);
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+      router.push(`${action}?q=${encodeURIComponent(query.trim())}`);
     }
   };
 
@@ -26,7 +34,7 @@ export default function SearchBar({ initialQuery = '' }: { initialQuery?: string
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search open-source tools, libraries, APIs..."
+          placeholder={placeholder}
           className="w-full rounded-xl border border-gray-300 bg-white py-4 pl-12 pr-28 text-lg shadow-sm transition-all focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         />
         <button

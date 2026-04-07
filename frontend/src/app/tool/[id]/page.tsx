@@ -54,13 +54,33 @@ export default async function ToolDetailPage({ params }: PageProps) {
 
       {/* Action links */}
       <div className="mt-6 flex flex-wrap gap-3">
+        {tool.apk_url && (
+          <a
+            href={tool.apk_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
+          >
+            ⬇ Download APK {tool.latest_version ? `v${tool.latest_version}` : ''}
+          </a>
+        )}
+        {tool.download_url && !tool.apk_url && (
+          <a
+            href={tool.download_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
+          >
+            ⬇ Download {tool.latest_version ? `v${tool.latest_version}` : ''}
+          </a>
+        )}
         <a
           href={tool.url}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
         >
-          View on GitHub →
+          {tool.source === 'fdroid' ? 'View on F-Droid →' : 'View on GitHub →'}
         </a>
         {tool.homepage && (
           <a
@@ -115,6 +135,18 @@ export default async function ToolDetailPage({ params }: PageProps) {
                 <dt className="text-gray-500">Source</dt>
                 <dd className="font-medium text-gray-900 capitalize">{tool.source}</dd>
               </div>
+              {tool.package_name && (
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Package</dt>
+                  <dd className="font-medium text-gray-900 text-xs">{tool.package_name}</dd>
+                </div>
+              )}
+              {tool.latest_version && (
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Version</dt>
+                  <dd className="font-medium text-gray-900">{tool.latest_version}</dd>
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-gray-500">Last Push</dt>
                 <dd className="font-medium text-gray-900">{timeAgo(tool.last_pushed_at)}</dd>

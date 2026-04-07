@@ -44,6 +44,12 @@ class ToolOut(BaseModel):
     last_commit_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    package_name: str | None = None
+    apk_url: str | None = None
+    download_url: str | None = None
+    app_type: str | None = None
+    icon_url: str | None = None
+    latest_version: str | None = None
     trust_score: TrustScoreOut | None = None
     risk_flags: list[RiskFlagOut] = []
 

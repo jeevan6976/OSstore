@@ -17,8 +17,8 @@ def init_meili_index():
     client = get_meili_client()
     index = client.index("tools")
     index.update_settings({
-        "searchableAttributes": ["name", "full_name", "description", "language", "topics"],
-        "filterableAttributes": ["language", "source", "stars"],
+        "searchableAttributes": ["name", "full_name", "description", "language", "topics", "package_name"],
+        "filterableAttributes": ["language", "source", "stars", "app_type"],
         "sortableAttributes": ["stars", "trust_overall", "updated_at"],
         "rankingRules": [
             "words", "typo", "proximity", "attribute", "sort", "exactness",
@@ -34,20 +34,20 @@ def index_tool(tool_dict: dict):
     index.add_documents([tool_dict], primary_key="id")
 
 
-def search_tools(query: str, page: int = 1, per_page: int = 20, language: str | None = None):
+def search_tools(query: str, page: int = 1, per_page: int = 20, language: str | None = None, filters: list[str] | None = None):
     client = get_meili_client()
     index = client.index("tools")
 
-    filters = []
-    if language:
-        filters.append(f'language = "{language}"')
+    all_filters = list(filters) if filters else []
+    if language and not any("language" in f for f in all_filters):
+        all_filters.append(f'language = "{language}"')
 
     result = index.search(
         query,
         {
             "limit": per_page,
             "offset": (page - 1) * per_page,
-            "filter": " AND ".join(filters) if filters else None,
+            "filter": " AND ".join(all_filters) if all_filters else None,
         }
     )
     return result
