@@ -15,6 +15,15 @@ class RiskFlagOut(BaseModel):
     message: str
 
 
+class VersionOut(BaseModel):
+    version: str
+    code: str = ""
+    apk_url: str = ""
+    size: int = 0
+    added: str | None = None
+    download_url: str = ""
+
+
 class ToolOut(BaseModel):
     id: str
     name: str
@@ -41,6 +50,7 @@ class ToolOut(BaseModel):
     latest_version: str | None = None
     trust_score: TrustScoreOut | None = None
     risk_flags: list[RiskFlagOut] = []
+    versions: list[VersionOut] = []
 
 
 class SearchResult(BaseModel):

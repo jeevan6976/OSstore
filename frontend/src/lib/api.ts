@@ -14,6 +14,15 @@ export interface RiskFlag {
   message: string;
 }
 
+export interface Version {
+  version: string;
+  code: string;
+  apk_url: string;
+  size: number;
+  added: string | null;
+  download_url?: string;
+}
+
 export interface Tool {
   id: string;
   name: string;
@@ -40,6 +49,7 @@ export interface Tool {
   latest_version: string | null;
   trust_score: TrustScore | null;
   risk_flags: RiskFlag[];
+  versions: Version[];
 }
 
 export interface SearchResult {

@@ -284,6 +284,44 @@ export default async function ToolDetailPage({ params }: PageProps) {
               </div>
             </div>
           )}
+
+          {/* Version History */}
+          {tool.versions && tool.versions.length > 0 && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+              <h2 className="mb-4 text-lg font-bold text-gray-900">📋 Version History</h2>
+              <div className="space-y-3">
+                {tool.versions.map((v, i) => (
+                  <div key={i} className={`flex items-center justify-between gap-4 rounded-xl border p-4 ${i === 0 ? 'border-emerald-200 bg-emerald-50/50' : 'border-gray-100 bg-gray-50/50'}`}>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-gray-900">{v.version}</span>
+                        {i === 0 && (
+                          <span className="rounded-full bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                            LATEST
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                        {v.added && <span>{timeAgo(v.added)}</span>}
+                        {v.size > 0 && <span>{(v.size / 1024 / 1024).toFixed(1)} MB</span>}
+                        {v.code && <span className="text-gray-400">#{v.code}</span>}
+                      </div>
+                    </div>
+                    {(v.apk_url || v.download_url) && (
+                      <a
+                        href={v.apk_url || v.download_url || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-800 transition-all"
+                      >
+                        ⬇ Download
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}

@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.schemas import ToolOut, SearchResult, TrustScoreOut, RiskFlagOut
+from app.schemas import ToolOut, SearchResult, TrustScoreOut, RiskFlagOut, VersionOut
 from app import github_service, fdroid_service
 from app.trust import compute_trust_score, compute_risk_flags
 
@@ -130,6 +130,7 @@ async def get_tool(tool_id: str):
         app = await fdroid_service.get_fdroid_app(pkg)
         if not app:
             raise HTTPException(status_code=404, detail="F-Droid app not found")
+        # F-Droid apps already have versions from the index
         return _enrich(app)
 
     # Treat as GitHub full_name (owner/repo)
@@ -140,5 +141,9 @@ async def get_tool(tool_id: str):
     apk = await github_service.fetch_latest_release_apk(tool_id)
     if apk:
         repo.update(apk)
+
+    # Fetch version history from GitHub releases
+    releases = await github_service.fetch_releases(tool_id)
+    repo["versions"] = releases
 
     return _enrich(repo)

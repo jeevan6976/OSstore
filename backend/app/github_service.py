@@ -93,6 +93,41 @@ async def fetch_latest_release_apk(full_name: str) -> dict | None:
         return None
 
 
+async def fetch_releases(full_name: str, limit: int = 10) -> list[dict]:
+    """Fetch recent releases for a GitHub repo."""
+    url = f"{GITHUB_API}/repos/{full_name}/releases"
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            resp = await client.get(url, headers=HEADERS, params={"per_page": limit})
+            if resp.status_code != 200:
+                return []
+            releases = resp.json()
+
+        versions = []
+        for r in releases:
+            tag = r.get("tag_name", "")
+            published = r.get("published_at", "")
+            # Find APK or first asset
+            apk_url = ""
+            size = 0
+            for asset in r.get("assets", []):
+                if asset.get("name", "").lower().endswith(".apk"):
+                    apk_url = asset.get("browser_download_url", "")
+                    size = asset.get("size", 0)
+                    break
+            versions.append({
+                "version": tag,
+                "code": "",
+                "apk_url": apk_url,
+                "size": size,
+                "added": published.replace("Z", "+00:00") if published else None,
+                "download_url": r.get("html_url", ""),
+            })
+        return versions
+    except Exception:
+        return []
+
+
 def _normalize_repo(repo: dict) -> dict:
     """Normalize GitHub API response to our tool schema."""
     license_info = repo.get("license") or {}

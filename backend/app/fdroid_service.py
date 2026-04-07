@@ -1,6 +1,7 @@
 """Async F-Droid index fetcher with Redis caching."""
 
 import json
+import re
 import httpx
 import redis.asyncio as aioredis
 from datetime import datetime, timezone
@@ -15,6 +16,15 @@ FDROID_PAGE_URL = "https://f-droid.org/packages"
 
 CACHE_KEY = "fdroid:index"
 CACHE_TTL = 60 * 60 * 6  # 6 hours
+
+
+def _strip_html(text: str) -> str:
+    """Remove HTML tags and clean up whitespace."""
+    if not text:
+        return ""
+    clean = re.sub(r"<[^>]+>", "", text)
+    clean = re.sub(r"\s+", " ", clean).strip()
+    return clean
 
 
 async def _get_redis() -> aioredis.Redis:
@@ -107,13 +117,33 @@ async def _fetch_v2(limit: int) -> list[dict]:
             if not description:
                 s = meta.get("summary", {})
                 description = s.get("en-US", s.get("en", ""))
+            description = _strip_html(description)
 
             latest_version = ""
             apk_name = ""
+            version_history: list[dict] = []
             if versions:
-                _, vi = sorted(versions.items(), key=lambda x: x[0], reverse=True)[0]
-                latest_version = vi.get("manifest", {}).get("versionName", "")
-                apk_name = vi.get("file", {}).get("name", "")
+                sorted_versions = sorted(versions.items(), key=lambda x: x[0], reverse=True)
+                for vc, vi in sorted_versions[:10]:
+                    manifest = vi.get("manifest", {})
+                    v_name = manifest.get("versionName", "")
+                    v_file = vi.get("file", {}).get("name", "")
+                    v_added = vi.get("added", 0)
+                    v_size = vi.get("file", {}).get("size", 0)
+                    version_history.append({
+                        "version": v_name,
+                        "code": vc,
+                        "apk_url": f"{FDROID_REPO_BASE}/{v_file}" if v_file else "",
+                        "size": v_size,
+                        "added": (
+                            datetime.fromtimestamp(v_added / 1000, tz=timezone.utc).isoformat()
+                            if v_added else None
+                        ),
+                    })
+                if sorted_versions:
+                    _, top = sorted_versions[0]
+                    latest_version = top.get("manifest", {}).get("versionName", "")
+                    apk_name = top.get("file", {}).get("name", "")
 
             apk_url = f"{FDROID_REPO_BASE}/{apk_name}" if apk_name else ""
 
@@ -142,6 +172,7 @@ async def _fetch_v2(limit: int) -> list[dict]:
                     latest_version=latest_version,
                     added=added,
                     updated=updated,
+                    version_history=version_history,
                 )
             )
         except Exception:
@@ -168,13 +199,24 @@ async def _fetch_v1(limit: int) -> list[dict]:
 
             name = ai.get("name", "") or ai.get("localized", {}).get("en-US", {}).get("name", pkg_name)
             description = ai.get("summary", "") or ai.get("localized", {}).get("en-US", {}).get("summary", "")
+            description = _strip_html(str(description))
 
             pkg_versions = raw_pkgs.get(pkg_name, [])
             latest_version = ""
             apk_name = ""
+            version_history: list[dict] = []
             if pkg_versions:
                 latest_version = pkg_versions[0].get("versionName", "")
                 apk_name = pkg_versions[0].get("apkName", "")
+                for pv in pkg_versions[:10]:
+                    v_apk = pv.get("apkName", "")
+                    version_history.append({
+                        "version": pv.get("versionName", ""),
+                        "code": str(pv.get("versionCode", "")),
+                        "apk_url": f"{FDROID_REPO_BASE}/{v_apk}" if v_apk else "",
+                        "size": pv.get("size", 0),
+                        "added": None,
+                    })
 
             apk_url = f"{FDROID_REPO_BASE}/{apk_name}" if apk_name else ""
             icon_n = ai.get("icon", "")
@@ -196,6 +238,7 @@ async def _fetch_v1(limit: int) -> list[dict]:
                     latest_version=latest_version,
                     added=ai.get("added", 0),
                     updated=ai.get("lastUpdated", 0),
+                    version_history=version_history,
                 )
             )
         except Exception:
@@ -217,6 +260,7 @@ def _build_app(
     latest_version: str,
     added: int,
     updated: int,
+    version_history: list[dict] | None = None,
 ) -> dict:
     last_updated = (
         datetime.fromtimestamp(updated / 1000, tz=timezone.utc).isoformat()
@@ -228,7 +272,7 @@ def _build_app(
         "id": f"fdroid/{pkg_name}",
         "name": name,
         "full_name": f"fdroid/{pkg_name}",
-        "description": (description[:2000] if description else ""),
+        "description": _strip_html(description[:2000]) if description else "",
         "url": f"{FDROID_PAGE_URL}/{pkg_name}",
         "homepage": homepage,
         "language": "Android",
@@ -248,4 +292,5 @@ def _build_app(
         "app_type": "app",
         "icon_url": icon_url,
         "latest_version": latest_version,
+        "versions": version_history or [],
     }
