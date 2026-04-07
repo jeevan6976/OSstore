@@ -1,32 +1,15 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.database import init_db
 from app.routes import router
-from app.search import init_meili_index
 
 settings = get_settings()
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    await init_db()
-    try:
-        init_meili_index()
-    except Exception as e:
-        print(f"[WARN] Meilisearch init failed (will retry): {e}")
-    yield
-    # Shutdown — nothing to clean up
-
-
 app = FastAPI(
     title="OS Store API",
-    description="Universal Open-Source Discovery + Trust Platform",
-    version="1.0.0",
-    lifespan=lifespan,
+    description="Stateless Open-Source Discovery — live search via GitHub + F-Droid",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -42,4 +25,4 @@ app.include_router(router, prefix="/api")
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "mode": "stateless"}

@@ -6,14 +6,12 @@ export interface TrustScore {
   community_score: number;
   maintenance_score: number;
   popularity_score: number;
-  computed_at: string;
 }
 
 export interface RiskFlag {
   flag_type: string;
   severity: string;
   message: string;
-  detected_at: string;
 }
 
 export interface Tool {
@@ -34,8 +32,6 @@ export interface Tool {
   owner_avatar: string | null;
   last_pushed_at: string | null;
   last_commit_at: string | null;
-  created_at: string;
-  updated_at: string;
   package_name: string | null;
   apk_url: string | null;
   download_url: string | null;
