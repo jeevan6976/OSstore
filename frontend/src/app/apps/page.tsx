@@ -24,7 +24,7 @@ export default async function AppsPage({ searchParams }: PageProps) {
   try {
     result = await browseApps(page, 20, query, source || undefined);
   } catch (e) {
-    error = 'Failed to fetch apps. Is the backend running?';
+    error = 'Failed to fetch apps. GitHub API may be rate limited — try again shortly.';
   }
 
   return (

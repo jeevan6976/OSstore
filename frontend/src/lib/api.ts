@@ -1,18 +1,28 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+/**
+ * API layer — calls GitHub API directly from Next.js server-side.
+ * No external backend needed. Trust scores computed locally.
+ */
 
-export interface TrustScore {
-  overall: number;
-  activity_score: number;
-  community_score: number;
-  maintenance_score: number;
-  popularity_score: number;
-}
+import {
+  searchRepos,
+  fetchRepo,
+  fetchReleases,
+  fetchReadme,
+  fetchTrending,
+  findApkInRelease,
+  type GitHubRepo,
+  type GitHubRelease,
+} from './github';
+import {
+  computeTrustScore,
+  computeRiskFlags,
+  type TrustScore,
+  type RiskFlag,
+} from './trust';
 
-export interface RiskFlag {
-  flag_type: string;
-  severity: string;
-  message: string;
-}
+// ── Public Types ────────────────────────────────────────────
+
+export type { TrustScore, RiskFlag };
 
 export interface Version {
   version: string;
@@ -61,78 +71,201 @@ export interface SearchResult {
   per_page: number;
 }
 
+// ── Transform GitHub Repo → Tool ────────────────────────────
+
+function repoToTool(
+  repo: GitHubRepo,
+  apkInfo?: { apk_url: string | null; download_url: string | null; latest_version: string | null },
+): Tool {
+  const trust = computeTrustScore(
+    repo.stargazers_count,
+    repo.forks_count,
+    repo.watchers_count,
+    repo.open_issues_count,
+    repo.pushed_at,
+    repo.updated_at,
+  );
+
+  const risks = computeRiskFlags(
+    repo.stargazers_count,
+    repo.forks_count,
+    repo.open_issues_count,
+    repo.license?.spdx_id || null,
+    repo.pushed_at,
+  );
+
+  const hasApk = !!(apkInfo?.apk_url);
+
+  return {
+    id: repo.full_name,
+    name: repo.name,
+    full_name: repo.full_name,
+    description: repo.description,
+    url: repo.html_url,
+    homepage: repo.homepage || null,
+    language: repo.language,
+    stars: repo.stargazers_count,
+    forks: repo.forks_count,
+    open_issues: repo.open_issues_count,
+    watchers: repo.watchers_count,
+    license: repo.license?.spdx_id || null,
+    topics: repo.topics?.length ? JSON.stringify(repo.topics) : null,
+    source: 'github',
+    owner_avatar: repo.owner?.avatar_url || null,
+    last_pushed_at: repo.pushed_at,
+    last_commit_at: repo.updated_at,
+    package_name: null,
+    apk_url: apkInfo?.apk_url || null,
+    download_url: apkInfo?.download_url || null,
+    app_type: hasApk ? 'app' : 'tool',
+    icon_url: repo.owner?.avatar_url || null,
+    latest_version: apkInfo?.latest_version || null,
+    readme_html: null,
+    trust_score: trust,
+    risk_flags: risks,
+    versions: [],
+  };
+}
+
+// ── Convert GitHub Releases → Version[] ─────────────────────
+
+function releasesToVersions(releases: GitHubRelease[]): Version[] {
+  return releases.map((r) => {
+    const apk = r.assets?.find((a) => a.name.toLowerCase().endsWith('.apk'));
+    const firstAsset = r.assets?.[0];
+    return {
+      version: r.tag_name?.replace(/^v/i, '') || 'unknown',
+      code: r.tag_name || '',
+      apk_url: apk?.browser_download_url || '',
+      size: apk?.size || firstAsset?.size || 0,
+      added: r.published_at || null,
+      download_url: firstAsset?.browser_download_url || '',
+    };
+  });
+}
+
+// ── Public API Functions ────────────────────────────────────
+
+/**
+ * Search GitHub repos directly.
+ */
 export async function searchTools(
   query: string,
   page: number = 1,
   perPage: number = 20,
-  language?: string,
-  source?: string,
-  appType?: string,
 ): Promise<SearchResult> {
-  const params = new URLSearchParams({
-    q: query,
-    page: String(page),
-    per_page: String(perPage),
-  });
-  if (language) params.set('language', language);
-  if (source) params.set('source', source);
-  if (appType) params.set('app_type', appType);
+  const data = await searchRepos(query, page, perPage);
 
-  const res = await fetch(`${API_URL}/api/search?${params.toString()}`, {
-    next: { revalidate: 60 },
-  });
+  // Fetch latest release for each repo in parallel for APK detection
+  const tools = await Promise.all(
+    data.items.map(async (repo) => {
+      try {
+        const releases = await fetchReleases(repo.owner.login, repo.name, 1);
+        const apkInfo = findApkInRelease(releases[0] || null);
+        return repoToTool(repo, apkInfo);
+      } catch {
+        return repoToTool(repo);
+      }
+    }),
+  );
 
-  if (!res.ok) {
-    throw new Error(`Search failed: ${res.status}`);
-  }
-
-  return res.json();
+  return {
+    tools,
+    total: data.total_count,
+    query,
+    page,
+    per_page: perPage,
+  };
 }
 
+/**
+ * Browse apps — search GitHub with a broad query.
+ */
 export async function browseApps(
   page: number = 1,
   perPage: number = 20,
   query: string = '',
   source?: string,
 ): Promise<SearchResult> {
-  const params = new URLSearchParams({
-    page: String(page),
-    per_page: String(perPage),
-  });
-  if (query) params.set('q', query);
-  if (source) params.set('source', source);
+  const q = query || 'stars:>100';
+  const data = await searchRepos(q, page, perPage);
 
-  const res = await fetch(`${API_URL}/api/apps?${params.toString()}`, {
-    next: { revalidate: 60 },
-  });
+  const tools = await Promise.all(
+    data.items.map(async (repo) => {
+      try {
+        const releases = await fetchReleases(repo.owner.login, repo.name, 1);
+        const apkInfo = findApkInRelease(releases[0] || null);
+        return repoToTool(repo, apkInfo);
+      } catch {
+        return repoToTool(repo);
+      }
+    }),
+  );
 
-  if (!res.ok) {
-    throw new Error(`Apps fetch failed: ${res.status}`);
-  }
-
-  return res.json();
+  return {
+    tools,
+    total: data.total_count,
+    query: query || 'Popular',
+    page,
+    per_page: perPage,
+  };
 }
 
+/**
+ * Get a single tool by its GitHub owner/repo id.
+ */
 export async function getTool(id: string): Promise<Tool> {
-  const res = await fetch(`${API_URL}/api/tool/${id}`, {
-    next: { revalidate: 120 },
-  });
+  const parts = id.split('/');
+  if (parts.length < 2) throw new Error('Invalid tool id');
 
-  if (!res.ok) {
-    throw new Error(`Tool fetch failed: ${res.status}`);
+  const owner = parts[0];
+  const repo = parts[1];
+
+  // Fetch repo, releases, and readme in parallel
+  const [repoData, releases, readmeHtml] = await Promise.all([
+    fetchRepo(owner, repo),
+    fetchReleases(owner, repo, 10),
+    fetchReadme(owner, repo),
+  ]);
+
+  if (!repoData) throw new Error('Repo not found');
+
+  const apkInfo = findApkInRelease(releases[0] || null);
+  const tool = repoToTool(repoData, apkInfo);
+
+  tool.readme_html = readmeHtml;
+  tool.versions = releasesToVersions(releases);
+
+  if (!tool.latest_version && releases.length > 0) {
+    tool.latest_version = releases[0].tag_name?.replace(/^v/i, '') || null;
   }
 
-  return res.json();
+  return tool;
 }
 
+/**
+ * Get trending repos from GitHub.
+ */
 export async function getTrending(): Promise<SearchResult> {
-  const res = await fetch(`${API_URL}/api/trending`, {
-    next: { revalidate: 3600 },
-  });
+  const repos = await fetchTrending(12);
 
-  if (!res.ok) {
-    throw new Error(`Trending fetch failed: ${res.status}`);
-  }
+  const tools = await Promise.all(
+    repos.map(async (repo) => {
+      try {
+        const releases = await fetchReleases(repo.owner.login, repo.name, 1);
+        const apkInfo = findApkInRelease(releases[0] || null);
+        return repoToTool(repo, apkInfo);
+      } catch {
+        return repoToTool(repo);
+      }
+    }),
+  );
 
-  return res.json();
+  return {
+    tools,
+    total: repos.length,
+    query: 'trending',
+    page: 1,
+    per_page: 12,
+  };
 }

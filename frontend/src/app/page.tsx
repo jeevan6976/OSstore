@@ -16,7 +16,8 @@ export default async function HomePage() {
   try {
     trending = await getTrending();
   } catch (e) {
-    // Backend might not be running — that's okay
+    console.error('Failed to fetch trending:', e);
+    // GitHub API might be rate limited — show page without trending
   }
 
   return (

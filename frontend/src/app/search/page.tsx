@@ -18,7 +18,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
     try {
       result = await searchTools(query, page);
     } catch (e) {
-      error = 'Failed to fetch results. Is the backend running?';
+      error = 'Failed to fetch results. GitHub API may be rate limited — try again shortly.';
     }
   }
 
