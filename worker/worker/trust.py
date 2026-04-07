@@ -8,17 +8,28 @@ Scoring dimensions (each 0–100, then weighted):
 """
 
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 def _clamp(val: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, val))
 
 
+def _now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _make_aware(dt: datetime) -> datetime:
+    """Ensure a datetime is timezone-aware (UTC)."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 def _days_since(dt: datetime | None) -> float:
     if dt is None:
         return 365 * 5  # treat unknown as very old
-    delta = datetime.utcnow() - dt
+    delta = _now_utc() - _make_aware(dt)
     return max(delta.total_seconds() / 86400, 0)
 
 

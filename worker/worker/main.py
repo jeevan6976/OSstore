@@ -4,7 +4,7 @@ import uuid
 import time
 import json
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 
 import meilisearch
 import redis
@@ -48,7 +48,7 @@ def upsert_tool(session, tool_data: dict) -> Tool:
         for key, val in tool_data.items():
             if key != "id":
                 setattr(existing, key, val)
-        existing.updated_at = datetime.utcnow()
+        existing.updated_at = datetime.now(timezone.utc)
         session.flush()
         return existing
     else:
@@ -64,9 +64,9 @@ def upsert_trust_score(session, tool: Tool, scores: dict):
     if existing:
         for key, val in scores.items():
             setattr(existing, key, val)
-        existing.computed_at = datetime.utcnow()
+        existing.computed_at = datetime.now(timezone.utc)
     else:
-        ts = TrustScore(id=uuid.uuid4().hex, tool_id=tool.id, computed_at=datetime.utcnow(), **scores)
+        ts = TrustScore(id=uuid.uuid4().hex, tool_id=tool.id, computed_at=datetime.now(timezone.utc), **scores)
         session.add(ts)
 
 
@@ -74,7 +74,7 @@ def replace_risk_flags(session, tool: Tool, flags: list[dict]):
     """Replace all risk flags for a tool."""
     session.query(RiskFlag).filter_by(tool_id=tool.id).delete()
     for flag in flags:
-        rf = RiskFlag(id=uuid.uuid4().hex, tool_id=tool.id, detected_at=datetime.utcnow(), **flag)
+        rf = RiskFlag(id=uuid.uuid4().hex, tool_id=tool.id, detected_at=datetime.now(timezone.utc), **flag)
         session.add(rf)
 
 
@@ -100,7 +100,7 @@ def index_tool_to_meili(meili: meilisearch.Client, tool: Tool, scores: dict):
 
 def run_fetch_cycle():
     """One full fetch cycle: pull repos, score them, index them."""
-    print(f"[{datetime.utcnow().isoformat()}] Starting fetch cycle...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Starting fetch cycle...")
     session = SessionLocal()
     meili = get_meili_client()
 
@@ -162,7 +162,7 @@ def run_fetch_cycle():
             time.sleep(5)
 
     session.close()
-    print(f"[{datetime.utcnow().isoformat()}] Fetch cycle complete. Processed {total_processed} tools.")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Fetch cycle complete. Processed {total_processed} tools.")
 
 
 def main():

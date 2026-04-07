@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="text-xl font-bold text-gray-900">OS Store</span>
             </a>
             <a
-              href="https://github.com"
+              href="https://github.com/jeevan6976/OSstore"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
