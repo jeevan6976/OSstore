@@ -83,11 +83,12 @@ function buildInstallOptions(tool: Tool) {
 }
 
 interface PageProps {
-  params: { id: string[] };
+  params: Promise<{ id: string[] }> | { id: string[] };
 }
 
 export default async function ToolDetailPage({ params }: PageProps) {
-  const toolId = params.id.join('/');
+  const p = await Promise.resolve(params);
+  const toolId = p.id.join('/');
   const tool = await getTool(toolId).catch(() => null);
 
   if (!tool) {

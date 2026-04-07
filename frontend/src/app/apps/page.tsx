@@ -3,7 +3,7 @@ import SearchBar from '@/components/SearchBar';
 import ToolCard from '@/components/ToolCard';
 
 interface PageProps {
-  searchParams: { q?: string; page?: string; source?: string };
+  searchParams: Promise<{ q?: string; page?: string; source?: string }> | { q?: string; page?: string; source?: string };
 }
 
 const SOURCE_TABS = [
@@ -13,9 +13,10 @@ const SOURCE_TABS = [
 ];
 
 export default async function AppsPage({ searchParams }: PageProps) {
-  const query = searchParams.q || '';
-  const page = parseInt(searchParams.page || '1', 10);
-  const source = searchParams.source || '';
+  const sp = await Promise.resolve(searchParams);
+  const query = sp.q || '';
+  const page = parseInt(sp.page || '1', 10);
+  const source = sp.source || '';
 
   let result = null;
   let error = null;

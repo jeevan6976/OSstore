@@ -3,12 +3,13 @@ import SearchBar from '@/components/SearchBar';
 import ToolCard from '@/components/ToolCard';
 
 interface PageProps {
-  searchParams: { q?: string; page?: string };
+  searchParams: Promise<{ q?: string; page?: string }> | { q?: string; page?: string };
 }
 
 export default async function SearchPage({ searchParams }: PageProps) {
-  const query = searchParams.q || '';
-  const page = parseInt(searchParams.page || '1', 10);
+  const sp = await Promise.resolve(searchParams);
+  const query = sp.q || '';
+  const page = parseInt(sp.page || '1', 10);
 
   let result = null;
   let error = null;
