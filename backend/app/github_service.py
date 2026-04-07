@@ -93,6 +93,20 @@ async def fetch_latest_release_apk(full_name: str) -> dict | None:
         return None
 
 
+async def fetch_readme(full_name: str) -> str | None:
+    """Fetch rendered README HTML for a GitHub repo."""
+    url = f"{GITHUB_API}/repos/{full_name}/readme"
+    headers = {**HEADERS, "Accept": "application/vnd.github.html+json"}
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            resp = await client.get(url, headers=headers)
+            if resp.status_code != 200:
+                return None
+            return resp.text
+    except Exception:
+        return None
+
+
 async def fetch_releases(full_name: str, limit: int = 10) -> list[dict]:
     """Fetch recent releases for a GitHub repo."""
     url = f"{GITHUB_API}/repos/{full_name}/releases"

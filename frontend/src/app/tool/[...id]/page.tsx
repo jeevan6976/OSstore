@@ -285,6 +285,17 @@ export default async function ToolDetailPage({ params }: PageProps) {
             </div>
           )}
 
+          {/* README */}
+          {tool.readme_html && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 overflow-hidden">
+              <h2 className="mb-4 text-lg font-bold text-gray-900">📖 README</h2>
+              <div
+                className="readme-content max-w-none"
+                dangerouslySetInnerHTML={{ __html: tool.readme_html }}
+              />
+            </div>
+          )}
+
           {/* Version History */}
           {tool.versions && tool.versions.length > 0 && (
             <div className="rounded-2xl border border-gray-200 bg-white p-6">

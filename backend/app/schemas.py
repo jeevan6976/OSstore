@@ -48,6 +48,7 @@ class ToolOut(BaseModel):
     app_type: str | None = None
     icon_url: str | None = None
     latest_version: str | None = None
+    readme_html: str | None = None
     trust_score: TrustScoreOut | None = None
     risk_flags: list[RiskFlagOut] = []
     versions: list[VersionOut] = []

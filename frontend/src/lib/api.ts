@@ -47,6 +47,7 @@ export interface Tool {
   app_type: string | null;
   icon_url: string | null;
   latest_version: string | null;
+  readme_html: string | null;
   trust_score: TrustScore | null;
   risk_flags: RiskFlag[];
   versions: Version[];
@@ -119,6 +120,18 @@ export async function getTool(id: string): Promise<Tool> {
 
   if (!res.ok) {
     throw new Error(`Tool fetch failed: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function getTrending(): Promise<SearchResult> {
+  const res = await fetch(`${API_URL}/api/trending`, {
+    next: { revalidate: 3600 },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Trending fetch failed: ${res.status}`);
   }
 
   return res.json();

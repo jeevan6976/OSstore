@@ -1,4 +1,6 @@
 import SearchBar from '@/components/SearchBar';
+import ToolCard from '@/components/ToolCard';
+import { getTrending } from '@/lib/api';
 
 const CATEGORIES = [
   { name: 'Android Apps', icon: '📱', query: '/apps', desc: 'F-Droid & GitHub APKs' },
@@ -9,7 +11,14 @@ const CATEGORIES = [
   { name: 'AI & ML', icon: '🤖', query: '/search?q=machine+learning+AI', desc: 'Models, tools, platforms' },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  let trending = null;
+  try {
+    trending = await getTrending();
+  } catch (e) {
+    // Backend might not be running — that's okay
+  }
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -86,6 +95,26 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Trending Repos */}
+      {trending && trending.tools.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">🔥 Trending Repos</h2>
+              <p className="mt-1 text-sm text-gray-500">Popular open-source projects right now</p>
+            </div>
+            <a href="/search?q=stars%3A%3E1000" className="text-sm font-medium text-brand-600 hover:text-brand-700">
+              View all →
+            </a>
+          </div>
+          <div className="space-y-4">
+            {trending.tools.map((tool) => (
+              <ToolCard key={tool.id} tool={tool} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* How it works */}
       <section className="border-t border-gray-200 bg-white">

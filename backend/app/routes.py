@@ -117,6 +117,36 @@ async def browse_apps(
 
 
 # ────────────────────────────────────────────────────────────────
+# GET /api/trending — popular repos for the homepage
+# ────────────────────────────────────────────────────────────────
+
+@router.get("/trending", response_model=SearchResult)
+async def trending(
+    per_page: int = Query(12, ge=1, le=50),
+):
+    """Return trending/popular repos (stars > 1000)."""
+    gh_tools, gh_total = await github_service.search_repos(
+        query="stars:>1000", sort="stars", per_page=per_page, page=1
+    )
+    tools: list[ToolOut] = []
+    for t in gh_tools:
+        if t.get("app_type") == "app":
+            apk = await github_service.fetch_latest_release_apk(t["full_name"])
+            if apk:
+                t.update(apk)
+        tools.append(_enrich(t))
+
+    # Mix in top F-Droid apps
+    fd_tools = await fdroid_service.get_fdroid_apps(limit=6)
+    for t in fd_tools:
+        tools.append(_enrich(t))
+
+    return SearchResult(
+        tools=tools[:per_page], total=len(tools), query="trending", page=1, per_page=per_page
+    )
+
+
+# ────────────────────────────────────────────────────────────────
 # GET /api/tool/{tool_id}
 # ────────────────────────────────────────────────────────────────
 
@@ -145,5 +175,10 @@ async def get_tool(tool_id: str):
     # Fetch version history from GitHub releases
     releases = await github_service.fetch_releases(tool_id)
     repo["versions"] = releases
+
+    # Fetch README
+    readme = await github_service.fetch_readme(tool_id)
+    if readme:
+        repo["readme_html"] = readme
 
     return _enrich(repo)
