@@ -1,5 +1,7 @@
-"""Stateless API routes — live GitHub + F-Droid lookups, no database."""
+"""Stateless API routes — live GitHub + F-Droid lookups, no database.
+Uses asyncio.gather for parallel requests."""
 
+import asyncio
 from fastapi import APIRouter, HTTPException, Query
 
 from app.schemas import ToolOut, SearchResult, TrustScoreOut, RiskFlagOut, VersionOut
@@ -46,21 +48,37 @@ async def search(
     tools: list[ToolOut] = []
     total = 0
 
+    # Run GitHub + F-Droid searches in parallel
+    gh_task = None
+    fd_task = None
+
     if source != "fdroid":
-        gh_tools, gh_total = await github_service.search_repos(
-            query=q, per_page=per_page, page=page
+        gh_task = asyncio.create_task(
+            github_service.search_repos(query=q, per_page=per_page, page=page)
         )
-        # Try to detect APKs for Android-looking repos (top 5 only to save API calls)
+    if source != "github":
+        fd_task = asyncio.create_task(
+            fdroid_service.search_fdroid(q, limit=per_page)
+        )
+
+    if gh_task:
+        gh_tools, gh_total = await gh_task
+        # Parallel APK detection for android repos (top 5)
+        android_repos = [(i, t) for i, t in enumerate(gh_tools) if t.get("app_type") == "app"][:5]
+        if android_repos:
+            apk_results = await asyncio.gather(
+                *[github_service.fetch_latest_release_apk(t["full_name"]) for _, t in android_repos],
+                return_exceptions=True,
+            )
+            for (idx, t), apk in zip(android_repos, apk_results):
+                if apk and not isinstance(apk, Exception):
+                    gh_tools[idx].update(apk)
         for t in gh_tools:
-            if t.get("app_type") == "app":
-                apk = await github_service.fetch_latest_release_apk(t["full_name"])
-                if apk:
-                    t.update(apk)
             tools.append(_enrich(t))
         total += gh_total
 
-    if source != "github":
-        fd_tools = await fdroid_service.search_fdroid(q, limit=per_page)
+    if fd_task:
+        fd_tools = await fd_task
         for t in fd_tools:
             tools.append(_enrich(t))
         total += len(fd_tools)
@@ -83,30 +101,44 @@ async def browse_apps(
     tools: list[ToolOut] = []
     total = 0
 
-    # F-Droid apps
+    # Run F-Droid + GitHub in parallel
+    fd_task = None
+    gh_task = None
+
     if source != "github":
         if q:
-            fd = await fdroid_service.search_fdroid(q, limit=per_page)
+            fd_task = asyncio.create_task(fdroid_service.search_fdroid(q, limit=per_page))
         else:
-            all_fd = await fdroid_service.get_fdroid_apps()
-            offset = (page - 1) * per_page
-            fd = all_fd[offset : offset + per_page]
-            total += len(all_fd)
-        for t in fd:
-            tools.append(_enrich(t))
-        if q:
-            total += len(fd)
+            fd_task = asyncio.create_task(fdroid_service.get_fdroid_apps())
 
-    # GitHub Android apps
     if source != "fdroid":
         gh_query = f"{q} " if q else ""
         gh_query += "topic:android topic:apk"
-        gh_tools, gh_total = await github_service.search_repos(
-            query=gh_query, per_page=per_page, page=page
+        gh_task = asyncio.create_task(
+            github_service.search_repos(query=gh_query, per_page=per_page, page=page)
         )
-        for t in gh_tools:
-            apk = await github_service.fetch_latest_release_apk(t["full_name"])
-            if apk:
+
+    if fd_task:
+        fd_result = await fd_task
+        if q:
+            fd = fd_result
+            total += len(fd)
+        else:
+            offset = (page - 1) * per_page
+            fd = fd_result[offset : offset + per_page]
+            total += len(fd_result)
+        for t in fd:
+            tools.append(_enrich(t))
+
+    if gh_task:
+        gh_tools, gh_total = await gh_task
+        # Parallel APK detection
+        apk_results = await asyncio.gather(
+            *[github_service.fetch_latest_release_apk(t["full_name"]) for t in gh_tools],
+            return_exceptions=True,
+        )
+        for t, apk in zip(gh_tools, apk_results):
+            if apk and not isinstance(apk, Exception):
                 t.update(apk)
             tools.append(_enrich(t))
         total += gh_total
@@ -125,19 +157,27 @@ async def trending(
     per_page: int = Query(12, ge=1, le=50),
 ):
     """Return trending/popular repos (stars > 1000)."""
-    gh_tools, gh_total = await github_service.search_repos(
+    # Run GitHub search + F-Droid fetch in parallel
+    gh_task = github_service.search_repos(
         query="stars:>1000", sort="stars", per_page=per_page, page=1
     )
-    tools: list[ToolOut] = []
-    for t in gh_tools:
-        if t.get("app_type") == "app":
-            apk = await github_service.fetch_latest_release_apk(t["full_name"])
-            if apk:
-                t.update(apk)
-        tools.append(_enrich(t))
+    fd_task = fdroid_service.get_fdroid_apps(limit=6)
+    (gh_tools, gh_total), fd_tools = await asyncio.gather(gh_task, fd_task)
 
-    # Mix in top F-Droid apps
-    fd_tools = await fdroid_service.get_fdroid_apps(limit=6)
+    tools: list[ToolOut] = []
+    # Parallel APK detection for android repos
+    android_repos = [(i, t) for i, t in enumerate(gh_tools) if t.get("app_type") == "app"]
+    if android_repos:
+        apk_results = await asyncio.gather(
+            *[github_service.fetch_latest_release_apk(t["full_name"]) for _, t in android_repos],
+            return_exceptions=True,
+        )
+        for (idx, t), apk in zip(android_repos, apk_results):
+            if apk and not isinstance(apk, Exception):
+                gh_tools[idx].update(apk)
+
+    for t in gh_tools:
+        tools.append(_enrich(t))
     for t in fd_tools:
         tools.append(_enrich(t))
 
@@ -164,21 +204,29 @@ async def get_tool(tool_id: str):
         return _enrich(app)
 
     # Treat as GitHub full_name (owner/repo)
-    repo = await github_service.fetch_repo(tool_id)
-    if not repo:
+    # Fetch repo, APK, releases, README all in parallel
+    repo_task = github_service.fetch_repo(tool_id)
+    apk_task = github_service.fetch_latest_release_apk(tool_id)
+    releases_task = github_service.fetch_releases(tool_id)
+    readme_task = github_service.fetch_readme(tool_id)
+
+    repo, apk, releases, readme = await asyncio.gather(
+        repo_task, apk_task, releases_task, readme_task,
+        return_exceptions=True,
+    )
+
+    if not repo or isinstance(repo, Exception):
         raise HTTPException(status_code=404, detail="GitHub repo not found")
 
-    apk = await github_service.fetch_latest_release_apk(tool_id)
-    if apk:
+    if apk and not isinstance(apk, Exception):
         repo.update(apk)
 
-    # Fetch version history from GitHub releases
-    releases = await github_service.fetch_releases(tool_id)
-    repo["versions"] = releases
+    if releases and not isinstance(releases, Exception):
+        repo["versions"] = releases
+    else:
+        repo["versions"] = []
 
-    # Fetch README
-    readme = await github_service.fetch_readme(tool_id)
-    if readme:
+    if readme and not isinstance(readme, Exception):
         repo["readme_html"] = readme
 
     return _enrich(repo)

@@ -79,7 +79,7 @@ export async function searchTools(
   if (appType) params.set('app_type', appType);
 
   const res = await fetch(`${API_URL}/api/search?${params.toString()}`, {
-    cache: 'no-store',
+    next: { revalidate: 60 },
   });
 
   if (!res.ok) {
@@ -103,7 +103,7 @@ export async function browseApps(
   if (source) params.set('source', source);
 
   const res = await fetch(`${API_URL}/api/apps?${params.toString()}`, {
-    cache: 'no-store',
+    next: { revalidate: 60 },
   });
 
   if (!res.ok) {
@@ -115,7 +115,7 @@ export async function browseApps(
 
 export async function getTool(id: string): Promise<Tool> {
   const res = await fetch(`${API_URL}/api/tool/${id}`, {
-    cache: 'no-store',
+    next: { revalidate: 120 },
   });
 
   if (!res.ok) {
