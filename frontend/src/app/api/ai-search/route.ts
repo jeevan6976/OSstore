@@ -129,41 +129,52 @@ Reply with ONLY valid JSON (no markdown, no explanation):
     return `${i + 1}. ${r.full_name} — ${r.description || 'No description'} (${r.stargazers_count.toLocaleString()} stars, ${r.language || 'unknown'}${topics ? `, topics: ${topics}` : ''})`;
   });
 
-  let ranked: Array<{ id: string; reason: string; score: number }> = [];
+  // Build a lowercase map for fuzzy ID matching
+  const repoMap = new Map(repos.map((r) => [r.full_name.toLowerCase(), r]));
+
+  const defaultRanked = repos.slice(0, 5).map((r) => ({
+    id: r.full_name,
+    reason: 'Highly relevant open-source project',
+    score: 75,
+  }));
+
+  let ranked: Array<{ id: string; reason: string; score: number }> = defaultRanked;
 
   try {
     const rankRaw = await ask(
       `User wants: "${query}"
 Understood as: "${intent}"
 
-GitHub repos found:
+GitHub repos found (use exact owner/repo ids from this list):
 ${repoList.join('\n')}
 
-Pick the best 5 matches. For each write a short reason (max 12 words) why it fits.
-Score 0–100 how well it matches.
+Pick the best 5. For each, write a short reason (max 12 words) why it fits the user's need.
+Score 0–100.
 
-Reply with ONLY a valid JSON array (no markdown, no explanation):
-[{"id":"owner/repo","reason":"short reason why it fits","score":90}]`,
-      400,
+Respond with ONLY a raw JSON array, no markdown fences:
+[{"id":"owner/repo","reason":"why it fits","score":90}]`,
+      512,
     );
 
-    const arrMatch = rankRaw.match(/\[[\s\S]*\]/);
-    if (arrMatch) ranked = JSON.parse(arrMatch[0]);
+    // Strip markdown fences if model wraps anyway
+    const cleaned = rankRaw.replace(/```[a-z]*\n?/gi, '').trim();
+    const arrMatch = cleaned.match(/\[[\s\S]*\]/);
+    if (arrMatch) {
+      const parsed = JSON.parse(arrMatch[0]);
+      if (Array.isArray(parsed) && parsed.length > 0) ranked = parsed;
+    }
   } catch {
-    ranked = repos.slice(0, 5).map((r) => ({
-      id: r.full_name,
-      reason: 'Matches your requirements',
-      score: 75,
-    }));
+    // keep defaultRanked
   }
 
   // ── Step 4: Merge with full repo data ─────────────────────
-  const repoMap = new Map(repos.map((r) => [r.full_name, r]));
-
   const tools = ranked
-    .filter((r) => repoMap.has(r.id))
     .map((r) => {
-      const repo = repoMap.get(r.id)!;
+      // Try exact match first, then lowercase, then partial match
+      const repo =
+        repoMap.get(r.id.toLowerCase()) ||
+        repos.find((x) => x.full_name.toLowerCase().includes(r.id.toLowerCase().split('/')[1] || ''));
+      if (!repo) return null;
       return {
         id: repo.full_name,
         name: repo.name,
@@ -184,7 +195,33 @@ Reply with ONLY a valid JSON array (no markdown, no explanation):
         match_reason: r.reason,
         match_score: r.score,
       };
-    });
+    })
+    .filter(Boolean);
+
+  // Last resort — if still empty, return top 5 unranked
+  if (tools.length === 0) {
+    const fallback = repos.slice(0, 5).map((repo) => ({
+      id: repo.full_name,
+      name: repo.name,
+      full_name: repo.full_name,
+      description: repo.description,
+      url: repo.html_url,
+      homepage: repo.homepage || null,
+      language: repo.language,
+      stars: repo.stargazers_count,
+      forks: repo.forks_count,
+      open_issues: repo.open_issues_count,
+      watchers: repo.watchers_count,
+      license: repo.license?.spdx_id || null,
+      topics: repo.topics?.length ? JSON.stringify(repo.topics) : null,
+      owner_avatar: repo.owner?.avatar_url || null,
+      last_pushed_at: repo.pushed_at,
+      icon_url: repo.owner?.avatar_url || null,
+      match_reason: 'Matches your requirements',
+      match_score: 75,
+    }));
+    return NextResponse.json({ intent, criteria, tools: fallback });
+  }
 
   return NextResponse.json({ intent, criteria, tools });
 }
