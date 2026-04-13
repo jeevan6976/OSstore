@@ -21,10 +21,11 @@ import {
   type TrustScore,
   type RiskFlag,
 } from './trust';
+import { getSecurityScan, type SecurityScan } from './security';
 
 // ── Public Types ────────────────────────────────────────────
 
-export type { TrustScore, RiskFlag };
+export type { TrustScore, RiskFlag, SecurityScan };
 
 export interface Version {
   version: string;
@@ -77,6 +78,7 @@ export interface Tool {
   versions: Version[];
   install_options: InstallOption[];
   total_downloads: number;
+  security_scan: SecurityScan | null;
 }
 
 export interface SearchResult {
@@ -158,6 +160,7 @@ function repoToTool(repo: GitHubRepo, analysis?: ReleaseAnalysis): Tool {
     versions: [],
     install_options: platformAssetsToInstallOptions(analysis?.platforms || []),
     total_downloads: analysis?.total_downloads || 0,
+    security_scan: null,
   };
 }
 
@@ -254,10 +257,11 @@ export async function getTool(id: string): Promise<Tool> {
   const owner = parts[0];
   const repo = parts[1];
 
-  const [repoData, releases, readmeHtml] = await Promise.all([
+  const [repoData, releases, readmeHtml, securityScan] = await Promise.all([
     fetchRepo(owner, repo),
     fetchReleases(owner, repo, 10),
     fetchReadme(owner, repo),
+    getSecurityScan(owner, repo),
   ]);
 
   if (!repoData) throw new Error('Repo not found');
@@ -266,6 +270,7 @@ export async function getTool(id: string): Promise<Tool> {
   const tool = repoToTool(repoData, analysis);
 
   tool.readme_html = readmeHtml;
+  tool.security_scan = securityScan;
   tool.versions = releasesToVersions(releases);
 
   if (!tool.latest_version && releases.length > 0) {

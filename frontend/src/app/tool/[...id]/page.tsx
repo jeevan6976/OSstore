@@ -1,6 +1,7 @@
 import { getTool } from '@/lib/api';
 import { notFound } from 'next/navigation';
 import TrustScoreChart from '@/components/TrustScoreChart';
+import SecurityPanel from '@/components/SecurityPanel';
 
 function formatSize(bytes: number): string {
   if (bytes <= 0) return '';
@@ -315,6 +316,10 @@ export default async function ToolDetailPage({ params }: PageProps) {
                 ))}
               </div>
             </div>
+          )}
+
+          {tool.security_scan && (
+            <SecurityPanel scan={tool.security_scan} />
           )}
         </div>
       </div>
