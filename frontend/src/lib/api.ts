@@ -22,6 +22,7 @@ import {
   type RiskFlag,
 } from './trust';
 import { getSecurityScan, type SecurityScan } from './security';
+import { getFdroidApps, searchFdroid, type FDroidTool } from './fdroid';
 
 // ── Public Types ────────────────────────────────────────────
 
@@ -108,6 +109,12 @@ function platformAssetsToInstallOptions(platforms: PlatformAsset[]): InstallOpti
   });
 }
 
+// ── Transform F-Droid app → Tool ────────────────────────────
+
+function fdroidToTool(app: FDroidTool): Tool {
+  return app as unknown as Tool;
+}
+
 // ── Transform GitHub Repo → Tool ────────────────────────────
 
 function repoToTool(repo: GitHubRepo, analysis?: ReleaseAnalysis): Tool {
@@ -184,15 +191,20 @@ function releasesToVersions(releases: GitHubRelease[]): Version[] {
 // ── Public API Functions ────────────────────────────────────
 
 /**
- * Search GitHub repos directly.
+ * Search tools — GitHub by default, F-Droid when source='fdroid'.
  */
 export async function searchTools(
   query: string,
   page: number = 1,
   perPage: number = 20,
+  source?: string,
 ): Promise<SearchResult> {
-  const data = await searchRepos(query, page, perPage);
+  if (source === 'fdroid') {
+    const { tools, total } = await searchFdroid(query, page, perPage);
+    return { tools: tools.map(fdroidToTool), total, query, page, per_page: perPage };
+  }
 
+  const data = await searchRepos(query, page, perPage);
   const tools = await Promise.all(
     data.items.map(async (repo) => {
       try {
@@ -204,18 +216,11 @@ export async function searchTools(
       }
     }),
   );
-
-  return {
-    tools,
-    total: data.total_count,
-    query,
-    page,
-    per_page: perPage,
-  };
+  return { tools, total: data.total_count, query, page, per_page: perPage };
 }
 
 /**
- * Browse apps — search GitHub with a broad query.
+ * Browse apps — F-Droid when source='fdroid', GitHub otherwise.
  */
 export async function browseApps(
   page: number = 1,
@@ -223,9 +228,17 @@ export async function browseApps(
   query: string = '',
   source?: string,
 ): Promise<SearchResult> {
+  // ── F-Droid ──
+  if (source === 'fdroid') {
+    const { tools, total } = query
+      ? await searchFdroid(query, page, perPage)
+      : await getFdroidApps(page, perPage);
+    return { tools: tools.map(fdroidToTool), total, query: query || 'F-Droid', page, per_page: perPage };
+  }
+
+  // ── GitHub ──
   const q = query || 'stars:>100';
   const data = await searchRepos(q, page, perPage);
-
   const tools = await Promise.all(
     data.items.map(async (repo) => {
       try {
@@ -237,20 +250,23 @@ export async function browseApps(
       }
     }),
   );
-
-  return {
-    tools,
-    total: data.total_count,
-    query: query || 'Popular',
-    page,
-    per_page: perPage,
-  };
+  return { tools, total: data.total_count, query: query || 'Popular', page, per_page: perPage };
 }
 
 /**
- * Get a single tool by its GitHub owner/repo id.
+ * Get a single tool — F-Droid (fdroid/com.example) or GitHub (owner/repo).
  */
 export async function getTool(id: string): Promise<Tool> {
+  // ── F-Droid app ──────────────────────────────────────────
+  if (id.startsWith('fdroid/')) {
+    const { getFdroidApp } = await import('./fdroid');
+    const packageName = id.slice('fdroid/'.length);
+    const app = await getFdroidApp(packageName);
+    if (!app) throw new Error('F-Droid app not found');
+    return fdroidToTool(app);
+  }
+
+  // ── GitHub repo ───────────────────────────────────────────
   const parts = id.split('/');
   if (parts.length < 2) throw new Error('Invalid tool id');
 
