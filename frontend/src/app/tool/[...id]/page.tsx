@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import TrustScoreChart from '@/components/TrustScoreChart';
 import SecurityPanel from '@/components/SecurityPanel';
 
+// ── Helpers ──────────────────────────────────────────────────
+
 function formatSize(bytes: number): string {
   if (bytes <= 0) return '';
   if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`;
@@ -11,15 +13,14 @@ function formatSize(bytes: number): string {
 }
 
 function formatNum(n: number): string {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return String(n);
 }
 
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return '';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const days = Math.floor(diff / 86400000);
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
   if (days === 0) return 'today';
   if (days === 1) return 'yesterday';
   if (days < 30) return `${days}d ago`;
@@ -41,35 +42,41 @@ export default async function ToolDetailPage({ params }: PageProps) {
   const toolId = p.id.join('/');
   const tool = await getTool(toolId).catch(() => null);
 
-  if (!tool) {
-    notFound();
-    return;
-  }
+  if (!tool) { notFound(); return; }
 
+  const isFdroid = tool.source === 'fdroid';
   const topics = parseTopics(tool.topics);
   const score = tool.trust_score?.overall ?? 0;
   const installs = tool.install_options;
+  const backHref = isFdroid ? '/apps?source=fdroid' : '/search?q=stars%3A%3E100';
+  const backLabel = isFdroid ? '← F-Droid' : '← Back';
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       {/* Back */}
-      <a href="/apps" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-6 transition-colors">
-        ← Back
+      <a href={backHref} className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-6 transition-colors">
+        {backLabel}
       </a>
 
-      {/* Header */}
+      {/* Header card */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row items-start gap-5">
-          <div className="flex-shrink-0 h-16 w-16 rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden">
+          {/* Icon */}
+          <div className="flex-shrink-0 h-20 w-20 rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden shadow-sm">
             {(tool.icon_url || tool.owner_avatar) ? (
-              <img src={tool.icon_url || tool.owner_avatar || ''} alt="" className="h-full w-full object-cover" />
+              <img
+                src={tool.icon_url || tool.owner_avatar || ''}
+                alt={tool.name}
+                className="h-full w-full object-cover"
+              />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-gray-300">
+              <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-gray-300">
                 {tool.name.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
 
+          {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">{tool.name}</h1>
@@ -78,26 +85,57 @@ export default async function ToolDetailPage({ params }: PageProps) {
                   v{tool.latest_version}
                 </span>
               )}
+              {/* Source badge */}
+              {isFdroid ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-700">
+                  📦 F-Droid
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600">
+                  🐙 GitHub
+                </span>
+              )}
             </div>
-            <p className="mt-1 text-sm text-gray-400">{tool.full_name}</p>
+
+            {/* Subtitle: package name for F-Droid, repo path for GitHub */}
+            <p className="mt-1 text-sm text-gray-400 font-mono">{tool.full_name}</p>
+
             {tool.description && (
               <p className="mt-3 text-gray-600 leading-relaxed">{tool.description}</p>
             )}
-            <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-500">
-              {tool.language && (
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-blue-400" />
-                  {tool.language}
-                </span>
-              )}
-              {tool.stars > 0 && <span>★ {formatNum(tool.stars)}</span>}
-              {tool.forks > 0 && <span>⑂ {formatNum(tool.forks)}</span>}
-              {tool.total_downloads > 0 && <span>↓ {formatNum(tool.total_downloads)} downloads</span>}
-            </div>
+
+            {/* GitHub-specific meta */}
+            {!isFdroid && (
+              <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                {tool.language && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-blue-400" />
+                    {tool.language}
+                  </span>
+                )}
+                {tool.stars > 0 && <span>★ {formatNum(tool.stars)}</span>}
+                {tool.forks > 0 && <span>⑂ {formatNum(tool.forks)}</span>}
+                {tool.total_downloads > 0 && <span>↓ {formatNum(tool.total_downloads)} downloads</span>}
+              </div>
+            )}
+
+            {/* F-Droid-specific meta */}
+            {isFdroid && (
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                {tool.license && (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-green-50 border border-green-200 px-2.5 py-1 text-xs font-medium text-green-700">
+                    ⚖️ {tool.license}
+                  </span>
+                )}
+                {tool.last_pushed_at && (
+                  <span className="text-xs text-gray-400">Updated {timeAgo(tool.last_pushed_at)}</span>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Trust badge */}
-          {tool.trust_score && (
+          {/* Trust badge — GitHub only */}
+          {tool.trust_score && !isFdroid && (
             <div className={`flex-shrink-0 rounded-2xl border p-4 text-center min-w-[80px] ${
               score >= 75 ? 'border-emerald-200 bg-emerald-50' :
               score >= 50 ? 'border-amber-200 bg-amber-50' : 'border-red-200 bg-red-50'
@@ -110,13 +148,24 @@ export default async function ToolDetailPage({ params }: PageProps) {
               <div className="text-[10px] font-semibold text-gray-500 mt-1">TRUST</div>
             </div>
           )}
+
+          {/* F-Droid verified badge */}
+          {isFdroid && (
+            <div className="flex-shrink-0 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-center min-w-[80px]">
+              <div className="text-2xl">✓</div>
+              <div className="text-[10px] font-semibold text-blue-600 mt-1">VERIFIED</div>
+              <div className="text-[9px] text-blue-400 mt-0.5">F-Droid</div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Install Section — data-driven from actual release assets */}
+      {/* Download / Install */}
       {installs.length > 0 && (
         <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 sm:p-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Download & Install</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            {isFdroid ? 'Download APK' : 'Download & Install'}
+          </h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {installs.map((opt, i) => (
               <a
@@ -132,7 +181,6 @@ export default async function ToolDetailPage({ params }: PageProps) {
                   <div className="text-xs opacity-80 truncate">
                     {opt.fileName && <span>{opt.fileName}</span>}
                     {opt.size > 0 && <span> · {formatSize(opt.size)}</span>}
-                    {opt.downloads > 0 && <span> · {formatNum(opt.downloads)} downloads</span>}
                   </div>
                 </div>
                 <svg className="flex-shrink-0 h-4 w-4 opacity-60 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -142,41 +190,93 @@ export default async function ToolDetailPage({ params }: PageProps) {
             ))}
           </div>
 
-          {/* Source links */}
+          {/* Action links */}
           <div className="mt-4 flex flex-wrap gap-3">
-            <a
-              href={tool.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-all"
-            >
-              🐙 View on GitHub
-            </a>
-            {tool.homepage && tool.homepage !== tool.url && (
-              <a
-                href={tool.homepage}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-all"
-              >
-                🌐 Homepage
-              </a>
+            {isFdroid ? (
+              <>
+                <a
+                  href={`https://f-droid.org/en/packages/${tool.full_name}/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-all"
+                >
+                  📦 View on F-Droid
+                </a>
+                {tool.url && !tool.url.includes('f-droid.org') && (
+                  <a
+                    href={tool.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-all"
+                  >
+                    🐙 Source Code
+                  </a>
+                )}
+              </>
+            ) : (
+              <>
+                <a
+                  href={tool.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-all"
+                >
+                  🐙 View on GitHub
+                </a>
+                {tool.homepage && tool.homepage !== tool.url && (
+                  <a
+                    href={tool.homepage}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-all"
+                  >
+                    🌐 Homepage
+                  </a>
+                )}
+              </>
             )}
           </div>
         </div>
       )}
 
-      {/* If no install options, show a "View Source" fallback */}
+      {/* No install options fallback */}
       {installs.length === 0 && (
         <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 sm:p-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-3">Source Code</h2>
-          <p className="text-sm text-gray-500 mb-4">No release binaries found. You can build from source or check the project page.</p>
+          <h2 className="text-lg font-bold text-gray-900 mb-3">
+            {isFdroid ? 'App Page' : 'Source Code'}
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            {isFdroid
+              ? 'Visit the F-Droid store page to install this app.'
+              : 'No release binaries found. Build from source or check the project page.'}
+          </p>
           <div className="flex flex-wrap gap-3">
-            <a href={tool.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-all">
-              🐙 View on GitHub
-            </a>
+            {isFdroid ? (
+              <a
+                href={`https://f-droid.org/en/packages/${tool.full_name}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-all"
+              >
+                📦 View on F-Droid
+              </a>
+            ) : (
+              <a
+                href={tool.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-all"
+              >
+                🐙 View on GitHub
+              </a>
+            )}
             {tool.homepage && tool.homepage !== tool.url && (
-              <a href={tool.homepage} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all">
+              <a
+                href={tool.homepage}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+              >
                 🌐 Homepage
               </a>
             )}
@@ -187,51 +287,62 @@ export default async function ToolDetailPage({ params }: PageProps) {
       {/* Content grid */}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              { label: 'Stars', value: tool.stars, icon: '★' },
-              { label: 'Forks', value: tool.forks, icon: '⑂' },
-              { label: 'Issues', value: tool.open_issues, icon: '●' },
-              { label: 'Watchers', value: tool.watchers, icon: '◉' },
-            ].map((s) => (
-              <div key={s.label} className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-                <p className="text-2xl font-bold text-gray-900">{formatNum(s.value)}</p>
-                <p className="text-xs text-gray-400 mt-1">{s.label}</p>
-              </div>
-            ))}
-          </div>
+
+          {/* GitHub stats — hidden for F-Droid */}
+          {!isFdroid && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { label: 'Stars', value: tool.stars, icon: '★' },
+                { label: 'Forks', value: tool.forks, icon: '⑂' },
+                { label: 'Issues', value: tool.open_issues, icon: '●' },
+                { label: 'Watchers', value: tool.watchers, icon: '◉' },
+              ].map((s) => (
+                <div key={s.label} className="rounded-xl border border-gray-200 bg-white p-4 text-center">
+                  <p className="text-2xl font-bold text-gray-900">{formatNum(s.value)}</p>
+                  <p className="text-xs text-gray-400 mt-1">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Details */}
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="mb-4 text-base font-bold text-gray-900">Details</h2>
-            <dl className="space-y-3 text-sm">
+            <dl className="space-y-2 text-sm">
               {[
+                { label: 'Package', value: isFdroid ? tool.full_name : null },
                 { label: 'Language', value: tool.language },
-                { label: 'License', value: tool.license || 'None' },
+                { label: 'License', value: tool.license || (isFdroid ? null : 'None') },
                 { label: 'Version', value: tool.latest_version },
                 { label: 'Updated', value: timeAgo(tool.last_pushed_at) },
+                { label: 'Source', value: isFdroid ? 'F-Droid Repository' : 'GitHub' },
               ]
                 .filter((d) => d.value)
                 .map((d) => (
-                  <div key={d.label} className="flex justify-between py-1 border-b border-gray-50 last:border-0">
+                  <div key={d.label} className="flex justify-between py-1.5 border-b border-gray-50 last:border-0">
                     <dt className="text-gray-400">{d.label}</dt>
-                    <dd className="font-medium text-gray-900">{d.value}</dd>
+                    <dd className="font-medium text-gray-900 text-right max-w-[60%] truncate">{d.value}</dd>
                   </div>
                 ))}
             </dl>
           </div>
 
-          {/* Topics */}
+          {/* Categories / Topics */}
           {topics.length > 0 && (
             <div className="rounded-xl border border-gray-200 bg-white p-6">
-              <h2 className="mb-3 text-base font-bold text-gray-900">Topics</h2>
+              <h2 className="mb-3 text-base font-bold text-gray-900">
+                {isFdroid ? 'Categories' : 'Topics'}
+              </h2>
               <div className="flex flex-wrap gap-2">
                 {topics.map((t) => (
                   <a
                     key={t}
-                    href={`/search?q=${encodeURIComponent(t)}`}
-                    className="rounded-lg bg-gray-50 border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+                    href={`${isFdroid ? '/apps?source=fdroid&' : '/search?'}q=${encodeURIComponent(t)}`}
+                    className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                      isFdroid
+                        ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100'
+                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                    }`}
                   >
                     {t}
                   </a>
@@ -240,7 +351,7 @@ export default async function ToolDetailPage({ params }: PageProps) {
             </div>
           )}
 
-          {/* README */}
+          {/* README — GitHub only */}
           {tool.readme_html && (
             <div className="rounded-xl border border-gray-200 bg-white p-6 overflow-hidden">
               <h2 className="mb-4 text-base font-bold text-gray-900">README</h2>
@@ -251,13 +362,18 @@ export default async function ToolDetailPage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Version History */}
+          {/* Releases — GitHub only */}
           {tool.versions && tool.versions.length > 0 && (
             <div className="rounded-xl border border-gray-200 bg-white p-6">
               <h2 className="mb-4 text-base font-bold text-gray-900">Releases</h2>
               <div className="space-y-2">
                 {tool.versions.map((v, i) => (
-                  <div key={i} className={`flex items-center justify-between gap-4 rounded-lg border p-3 ${i === 0 ? 'border-emerald-200 bg-emerald-50/50' : 'border-gray-100'}`}>
+                  <div
+                    key={i}
+                    className={`flex items-center justify-between gap-4 rounded-lg border p-3 ${
+                      i === 0 ? 'border-emerald-200 bg-emerald-50/50' : 'border-gray-100'
+                    }`}
+                  >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-semibold text-sm text-gray-900">{v.version}</span>
@@ -287,17 +403,58 @@ export default async function ToolDetailPage({ params }: PageProps) {
               </div>
             </div>
           )}
+
+          {/* F-Droid install instructions */}
+          {isFdroid && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-6">
+              <h2 className="mb-3 text-base font-bold text-gray-900">How to Install</h2>
+              <ol className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-start gap-2">
+                  <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold mt-0.5">1</span>
+                  Install the <a href="https://f-droid.org/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">F-Droid app</a> on your Android device
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold mt-0.5">2</span>
+                  Search for <strong className="text-gray-800">{tool.name}</strong> in the F-Droid app
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold mt-0.5">3</span>
+                  Or download the APK directly using the button above
+                </li>
+              </ol>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {tool.trust_score && (
+          {/* Trust score — GitHub only */}
+          {tool.trust_score && !isFdroid && (
             <div className="rounded-xl border border-gray-200 bg-white p-6">
               <TrustScoreChart score={tool.trust_score} />
             </div>
           )}
 
-          {tool.risk_flags.length > 0 && (
+          {/* F-Droid trust info */}
+          {isFdroid && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 space-y-3">
+              <h3 className="text-sm font-bold text-blue-900">Why F-Droid is Safe</h3>
+              {[
+                { icon: '🔍', text: 'Source code reviewed by F-Droid team' },
+                { icon: '🏗️', text: 'Built from source — no binary blobs' },
+                { icon: '🚫', text: 'No proprietary trackers or ads allowed' },
+                { icon: '🔓', text: '100% Free & Open Source Software' },
+              ].map((item) => (
+                <div key={item.text} className="flex items-start gap-2.5">
+                  <span className="text-base flex-shrink-0">{item.icon}</span>
+                  <p className="text-xs text-blue-800 leading-relaxed">{item.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Risk flags — GitHub only */}
+          {tool.risk_flags.length > 0 && !isFdroid && (
             <div className="rounded-xl border border-gray-200 bg-white p-6">
               <h3 className="mb-3 text-sm font-bold text-gray-700">Risk Flags</h3>
               <div className="space-y-2">
@@ -318,9 +475,48 @@ export default async function ToolDetailPage({ params }: PageProps) {
             </div>
           )}
 
-          {tool.security_scan && (
+          {/* Security scan — GitHub only */}
+          {tool.security_scan && !isFdroid && (
             <SecurityPanel scan={tool.security_scan} />
           )}
+
+          {/* Quick links */}
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <h3 className="text-sm font-bold text-gray-700 mb-3">Links</h3>
+            <div className="space-y-2">
+              {isFdroid && (
+                <a
+                  href={`https://f-droid.org/en/packages/${tool.full_name}/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-gray-100 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <span>📦</span> F-Droid Store
+                </a>
+              )}
+              {tool.url && (
+                <a
+                  href={tool.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-gray-100 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <span>{isFdroid ? '🐙' : '🐙'}</span>
+                  {isFdroid ? 'Source Code' : 'GitHub Repo'}
+                </a>
+              )}
+              {tool.homepage && tool.homepage !== tool.url && (
+                <a
+                  href={tool.homepage}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-gray-100 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <span>🌐</span> Website
+                </a>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
