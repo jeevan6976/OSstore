@@ -9,9 +9,11 @@ import {
   fetchReleases,
   fetchReadme,
   fetchTrending,
-  findApkInRelease,
+  analyzeRelease,
   type GitHubRepo,
   type GitHubRelease,
+  type PlatformAsset,
+  type ReleaseAnalysis,
 } from './github';
 import {
   computeTrustScore,
@@ -31,6 +33,18 @@ export interface Version {
   size: number;
   added: string | null;
   download_url?: string;
+}
+
+export interface InstallOption {
+  platform: string;
+  label: string;
+  fileName: string;
+  url: string;
+  size: number;
+  downloads: number;
+  fileType: string;
+  icon: string;
+  color: string;
 }
 
 export interface Tool {
@@ -61,6 +75,8 @@ export interface Tool {
   trust_score: TrustScore | null;
   risk_flags: RiskFlag[];
   versions: Version[];
+  install_options: InstallOption[];
+  total_downloads: number;
 }
 
 export interface SearchResult {
@@ -71,12 +87,28 @@ export interface SearchResult {
   per_page: number;
 }
 
+// ── Platform icon/color mapping ─────────────────────────────
+
+const PLATFORM_STYLE: Record<string, { icon: string; color: string }> = {
+  android: { icon: '🤖', color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+  macos: { icon: '🍎', color: 'bg-gray-900 hover:bg-gray-800 text-white' },
+  windows: { icon: '🪟', color: 'bg-blue-600 hover:bg-blue-700 text-white' },
+  linux: { icon: '🐧', color: 'bg-amber-600 hover:bg-amber-700 text-white' },
+  ios: { icon: '📱', color: 'bg-gray-900 hover:bg-gray-800 text-white' },
+  web: { icon: '🌐', color: 'bg-purple-600 hover:bg-purple-700 text-white' },
+  other: { icon: '📦', color: 'bg-gray-600 hover:bg-gray-700 text-white' },
+};
+
+function platformAssetsToInstallOptions(platforms: PlatformAsset[]): InstallOption[] {
+  return platforms.map((p) => {
+    const style = PLATFORM_STYLE[p.platform] || PLATFORM_STYLE.other;
+    return { ...p, icon: style.icon, color: style.color };
+  });
+}
+
 // ── Transform GitHub Repo → Tool ────────────────────────────
 
-function repoToTool(
-  repo: GitHubRepo,
-  apkInfo?: { apk_url: string | null; download_url: string | null; latest_version: string | null },
-): Tool {
+function repoToTool(repo: GitHubRepo, analysis?: ReleaseAnalysis): Tool {
   const trust = computeTrustScore(
     repo.stargazers_count,
     repo.forks_count,
@@ -94,7 +126,7 @@ function repoToTool(
     repo.pushed_at,
   );
 
-  const hasApk = !!(apkInfo?.apk_url);
+  const hasApk = !!(analysis?.apk_url);
 
   return {
     id: repo.full_name,
@@ -115,15 +147,17 @@ function repoToTool(
     last_pushed_at: repo.pushed_at,
     last_commit_at: repo.updated_at,
     package_name: null,
-    apk_url: apkInfo?.apk_url || null,
-    download_url: apkInfo?.download_url || null,
+    apk_url: analysis?.apk_url || null,
+    download_url: analysis?.download_url || null,
     app_type: hasApk ? 'app' : 'tool',
     icon_url: repo.owner?.avatar_url || null,
-    latest_version: apkInfo?.latest_version || null,
+    latest_version: analysis?.latest_version || null,
     readme_html: null,
     trust_score: trust,
     risk_flags: risks,
     versions: [],
+    install_options: platformAssetsToInstallOptions(analysis?.platforms || []),
+    total_downloads: analysis?.total_downloads || 0,
   };
 }
 
@@ -156,13 +190,12 @@ export async function searchTools(
 ): Promise<SearchResult> {
   const data = await searchRepos(query, page, perPage);
 
-  // Fetch latest release for each repo in parallel for APK detection
   const tools = await Promise.all(
     data.items.map(async (repo) => {
       try {
         const releases = await fetchReleases(repo.owner.login, repo.name, 1);
-        const apkInfo = findApkInRelease(releases[0] || null);
-        return repoToTool(repo, apkInfo);
+        const analysis = analyzeRelease(releases[0] || null);
+        return repoToTool(repo, analysis);
       } catch {
         return repoToTool(repo);
       }
@@ -194,8 +227,8 @@ export async function browseApps(
     data.items.map(async (repo) => {
       try {
         const releases = await fetchReleases(repo.owner.login, repo.name, 1);
-        const apkInfo = findApkInRelease(releases[0] || null);
-        return repoToTool(repo, apkInfo);
+        const analysis = analyzeRelease(releases[0] || null);
+        return repoToTool(repo, analysis);
       } catch {
         return repoToTool(repo);
       }
@@ -221,7 +254,6 @@ export async function getTool(id: string): Promise<Tool> {
   const owner = parts[0];
   const repo = parts[1];
 
-  // Fetch repo, releases, and readme in parallel
   const [repoData, releases, readmeHtml] = await Promise.all([
     fetchRepo(owner, repo),
     fetchReleases(owner, repo, 10),
@@ -230,14 +262,28 @@ export async function getTool(id: string): Promise<Tool> {
 
   if (!repoData) throw new Error('Repo not found');
 
-  const apkInfo = findApkInRelease(releases[0] || null);
-  const tool = repoToTool(repoData, apkInfo);
+  const analysis = analyzeRelease(releases[0] || null);
+  const tool = repoToTool(repoData, analysis);
 
   tool.readme_html = readmeHtml;
   tool.versions = releasesToVersions(releases);
 
   if (!tool.latest_version && releases.length > 0) {
     tool.latest_version = releases[0].tag_name?.replace(/^v/i, '') || null;
+  }
+
+  if (tool.homepage && tool.homepage !== tool.url) {
+    tool.install_options.push({
+      platform: 'web',
+      label: 'Website',
+      fileName: '',
+      url: tool.homepage,
+      size: 0,
+      downloads: 0,
+      fileType: 'web',
+      icon: '🌐',
+      color: 'bg-purple-600 hover:bg-purple-700 text-white',
+    });
   }
 
   return tool;
@@ -253,8 +299,8 @@ export async function getTrending(): Promise<SearchResult> {
     repos.map(async (repo) => {
       try {
         const releases = await fetchReleases(repo.owner.login, repo.name, 1);
-        const apkInfo = findApkInRelease(releases[0] || null);
-        return repoToTool(repo, apkInfo);
+        const analysis = analyzeRelease(releases[0] || null);
+        return repoToTool(repo, analysis);
       } catch {
         return repoToTool(repo);
       }
