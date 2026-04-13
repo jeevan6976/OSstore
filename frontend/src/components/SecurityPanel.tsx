@@ -1,4 +1,5 @@
-import type { SecurityScan, Vulnerability } from '@/lib/api';
+import type { SecurityScan } from '@/lib/api';
+import type { Vulnerability } from '@/lib/security';
 
 // ── Helpers ─────────────────────────────────────────────────
 
