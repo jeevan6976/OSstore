@@ -179,10 +179,13 @@ export default async function ToolDetailPage({ params }: PageProps) {
             const primary = installs.find((o) => o.fileType !== 'web') || installs[0];
             if (!primary) return null;
             const isWeb = primary.fileType === 'web';
+            const href = isWeb
+              ? primary.url
+              : `/api/download?url=${encodeURIComponent(primary.url)}&filename=${encodeURIComponent(primary.fileName || 'download')}`;
             return (
               <a
-                href={primary.url}
-                {...(!isWeb ? { download: primary.fileName || true } : { target: '_blank', rel: 'noopener noreferrer' })}
+                href={href}
+                {...(isWeb ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 className={`group mb-4 flex w-full items-center gap-4 rounded-2xl px-6 py-4 transition-all shadow-sm hover:shadow-md ${primary.color}`}
               >
                 <span className="text-3xl flex-shrink-0">{primary.icon}</span>
@@ -211,11 +214,14 @@ export default async function ToolDetailPage({ params }: PageProps) {
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {installs.slice(1).map((opt, i) => {
                 const isWeb = opt.fileType === 'web';
+                const href = isWeb
+                  ? opt.url
+                  : `/api/download?url=${encodeURIComponent(opt.url)}&filename=${encodeURIComponent(opt.fileName || 'download')}`;
                 return (
                   <a
                     key={i}
-                    href={opt.url}
-                    {...(!isWeb ? { download: opt.fileName || true } : { target: '_blank', rel: 'noopener noreferrer' })}
+                    href={href}
+                    {...(isWeb ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                     className="group flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 hover:bg-gray-100 transition-all"
                   >
                     <span className="text-xl flex-shrink-0">{opt.icon}</span>
