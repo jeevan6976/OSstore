@@ -163,35 +163,85 @@ export default async function ToolDetailPage({ params }: PageProps) {
       {/* Download / Install */}
       {installs.length > 0 && (
         <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 sm:p-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            {isFdroid ? 'Download APK' : 'Download & Install'}
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {installs.map((opt, i) => (
-              <a
-                key={i}
-                href={opt.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`group flex items-center gap-3 rounded-xl p-4 transition-all ${opt.color}`}
-              >
-                <span className="text-2xl flex-shrink-0">{opt.icon}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-sm">{opt.label}</div>
-                  <div className="text-xs opacity-80 truncate">
-                    {opt.fileName && <span>{opt.fileName}</span>}
-                    {opt.size > 0 && <span> · {formatSize(opt.size)}</span>}
-                  </div>
-                </div>
-                <svg className="flex-shrink-0 h-4 w-4 opacity-60 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
-                </svg>
-              </a>
-            ))}
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg font-bold text-gray-900">
+              {isFdroid ? 'Download APK' : 'Download & Install'}
+            </h2>
+            {tool.total_downloads > 0 && (
+              <span className="text-xs text-gray-400 font-medium">
+                {formatNum(tool.total_downloads)} total downloads
+              </span>
+            )}
           </div>
 
+          {/* Primary download — biggest / most relevant asset */}
+          {(() => {
+            const primary = installs.find((o) => o.fileType !== 'web') || installs[0];
+            if (!primary) return null;
+            const isWeb = primary.fileType === 'web';
+            return (
+              <a
+                href={primary.url}
+                {...(!isWeb ? { download: primary.fileName || true } : { target: '_blank', rel: 'noopener noreferrer' })}
+                className={`group mb-4 flex w-full items-center gap-4 rounded-2xl px-6 py-4 transition-all shadow-sm hover:shadow-md ${primary.color}`}
+              >
+                <span className="text-3xl flex-shrink-0">{primary.icon}</span>
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="font-bold text-base leading-tight">{primary.label}</div>
+                  <div className="text-xs opacity-75 mt-0.5">
+                    {primary.fileName && <span className="font-mono">{primary.fileName}</span>}
+                    {primary.size > 0 && <span> · {formatSize(primary.size)}</span>}
+                  </div>
+                </div>
+                {isWeb ? (
+                  <svg className="flex-shrink-0 h-5 w-5 opacity-70 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                  </svg>
+                ) : (
+                  <svg className="flex-shrink-0 h-5 w-5 opacity-70 group-hover:translate-y-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                )}
+              </a>
+            );
+          })()}
+
+          {/* Other platform downloads */}
+          {installs.length > 1 && (
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {installs.slice(1).map((opt, i) => {
+                const isWeb = opt.fileType === 'web';
+                return (
+                  <a
+                    key={i}
+                    href={opt.url}
+                    {...(!isWeb ? { download: opt.fileName || true } : { target: '_blank', rel: 'noopener noreferrer' })}
+                    className="group flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 hover:bg-gray-100 transition-all"
+                  >
+                    <span className="text-xl flex-shrink-0">{opt.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-sm text-gray-800">{opt.label}</div>
+                      {opt.size > 0 && (
+                        <div className="text-xs text-gray-400">{formatSize(opt.size)}</div>
+                      )}
+                    </div>
+                    {isWeb ? (
+                      <svg className="flex-shrink-0 h-3.5 w-3.5 text-gray-400 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                      </svg>
+                    ) : (
+                      <svg className="flex-shrink-0 h-3.5 w-3.5 text-gray-400 group-hover:translate-y-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                      </svg>
+                    )}
+                  </a>
+                );
+              })}
+            </div>
+          )}
+
           {/* Action links */}
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap gap-3 pt-4 border-t border-gray-100">
             {isFdroid ? (
               <>
                 <a
