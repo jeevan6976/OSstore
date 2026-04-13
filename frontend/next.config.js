@@ -8,7 +8,7 @@ const nextConfig = {
       },
     ],
   },
-  // GITHUB_TOKEN is server-side only (no NEXT_PUBLIC_ prefix) — safe
+  // Server-side only env vars (no NEXT_PUBLIC_ prefix) — never sent to browser
   env: {
     GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
   },

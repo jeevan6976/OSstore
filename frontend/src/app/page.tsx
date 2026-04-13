@@ -1,4 +1,4 @@
-import SearchBar from '@/components/SearchBar';
+import AISearchBar from '@/components/AISearchBar';
 import ToolCard from '@/components/ToolCard';
 import { getTrending } from '@/lib/api';
 
@@ -37,7 +37,7 @@ export default async function HomePage() {
             Discover apps from F-Droid &amp; GitHub with trust scores. Download APKs for Android, find tools for Mac, Windows &amp; Linux.
           </p>
           <div className="mt-10 flex justify-center">
-            <SearchBar placeholder="Search apps, tools, libraries..." />
+            <AISearchBar placeholder="Search apps, tools, libraries..." />
           </div>
 
           {/* Quick stats */}
