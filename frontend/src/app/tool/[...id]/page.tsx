@@ -340,8 +340,8 @@ export default async function ToolDetailPage({ params }: PageProps) {
 
           {/* README — GitHub only */}
           {tool.readme_html && (
-            <div className="rounded-xl border border-gray-800 bg-gray-950 p-6 overflow-hidden">
-              <h2 className="mb-4 text-base font-bold text-gray-100">README</h2>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 overflow-hidden">
+              <h2 className="mb-4 text-base font-bold text-gray-900">README</h2>
               <div
                 className="readme-content max-w-none"
                 dangerouslySetInnerHTML={{ __html: tool.readme_html }}

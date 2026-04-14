@@ -60,28 +60,27 @@ body {
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-/* README rendered content — dark theme */
+/* README rendered content */
 .readme-content {
-  line-height: 1.75;
+  line-height: 1.7;
   word-break: break-word;
-  color: #d1d5db;
 }
-.readme-content h1 { font-size: 1.75rem; font-weight: 800; margin-top: 2rem; margin-bottom: 0.75rem; color: #f9fafb; border-bottom: 1px solid #374151; padding-bottom: 0.5rem; }
-.readme-content h2 { font-size: 1.35rem; font-weight: 700; margin-top: 1.75rem; margin-bottom: 0.5rem; color: #f3f4f6; border-bottom: 1px solid #1f2937; padding-bottom: 0.4rem; }
-.readme-content h3 { font-size: 1.15rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #e5e7eb; }
-.readme-content h4, .readme-content h5, .readme-content h6 { font-size: 1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #d1d5db; }
-.readme-content p { margin-bottom: 0.75rem; color: #9ca3af; }
-.readme-content a { color: #60a5fa; text-decoration: underline; text-underline-offset: 2px; }
-.readme-content a:hover { color: #93c5fd; }
-.readme-content img { max-width: 100%; border-radius: 0.75rem; margin: 1rem 0; }
-.readme-content pre { background: #0d1117; border: 1px solid #30363d; border-radius: 0.75rem; padding: 1rem 1.25rem; overflow-x: auto; margin: 1rem 0; font-size: 0.85rem; }
-.readme-content code { background: #161b22; border: 1px solid #30363d; padding: 0.15rem 0.45rem; border-radius: 0.375rem; font-size: 0.875em; color: #f97316; }
-.readme-content pre code { background: transparent; border: none; padding: 0; color: #e2e8f0; }
+.readme-content h1 { font-size: 1.75rem; font-weight: 800; margin-top: 2rem; margin-bottom: 0.75rem; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
+.readme-content h2 { font-size: 1.35rem; font-weight: 700; margin-top: 1.75rem; margin-bottom: 0.5rem; color: #111827; border-bottom: 1px solid #f3f4f6; padding-bottom: 0.4rem; }
+.readme-content h3 { font-size: 1.15rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #1f2937; }
+.readme-content h4, .readme-content h5, .readme-content h6 { font-size: 1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #374151; }
+.readme-content p { margin-bottom: 0.75rem; color: #374151; }
+.readme-content a { color: #2563eb; text-decoration: underline; text-underline-offset: 2px; }
+.readme-content a:hover { color: #1d4ed8; }
+.readme-content img { max-width: 100%; border-radius: 0.75rem; margin: 1rem 0; background: #000; padding: 0.5rem; }
+.readme-content pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-size: 0.85rem; }
+.readme-content code { background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 0.375rem; font-size: 0.875em; color: #be185d; }
+.readme-content pre code { background: transparent; padding: 0; color: inherit; }
 .readme-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.75rem; }
 .readme-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 0.75rem; }
-.readme-content li { margin-bottom: 0.25rem; color: #9ca3af; }
-.readme-content blockquote { border-left: 3px solid #374151; padding: 0.5rem 1rem; margin: 1rem 0; color: #6b7280; background: #111827; border-radius: 0 0.5rem 0.5rem 0; }
+.readme-content li { margin-bottom: 0.25rem; color: #374151; }
+.readme-content blockquote { border-left: 4px solid #d1d5db; padding: 0.5rem 1rem; margin: 1rem 0; color: #6b7280; background: #f9fafb; border-radius: 0 0.5rem 0.5rem 0; }
 .readme-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
-.readme-content th { background: #111827; padding: 0.5rem 0.75rem; border: 1px solid #374151; text-align: left; font-weight: 600; color: #d1d5db; }
-.readme-content td { padding: 0.5rem 0.75rem; border: 1px solid #1f2937; color: #9ca3af; }
-.readme-content hr { border: none; border-top: 1px solid #1f2937; margin: 1.5rem 0; }
+.readme-content th { background: #f8fafc; padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; text-align: left; font-weight: 600; color: #374151; }
+.readme-content td { padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; color: #4b5563; }
+.readme-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
