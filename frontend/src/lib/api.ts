@@ -124,7 +124,7 @@ function repoToTool(repo: GitHubRepo, analysis?: ReleaseAnalysis): Tool {
     repo.watchers_count,
     repo.open_issues_count,
     repo.pushed_at,
-    repo.updated_at,
+    repo.pushed_at,
   );
 
   const risks = computeRiskFlags(
