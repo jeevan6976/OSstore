@@ -20,6 +20,10 @@ def _enrich(tool: dict) -> ToolOut:
         open_issues=tool.get("open_issues", 0),
         last_pushed_at=tool.get("last_pushed_at"),
         last_commit_at=tool.get("last_commit_at"),
+        license_name=tool.get("license"),
+        description=tool.get("description"),
+        has_topics=bool(tool.get("topics")),
+        created_at=tool.get("created_at"),
     )
     rf = compute_risk_flags(
         stars=tool.get("stars", 0),
@@ -27,6 +31,8 @@ def _enrich(tool: dict) -> ToolOut:
         open_issues=tool.get("open_issues", 0),
         license_name=tool.get("license"),
         last_pushed_at=tool.get("last_pushed_at"),
+        description=tool.get("description"),
+        created_at=tool.get("created_at"),
     )
     tool["trust_score"] = TrustScoreOut(**ts)
     tool["risk_flags"] = [RiskFlagOut(**f) for f in rf]

@@ -6,6 +6,7 @@ export default function TrustScoreChart({ score }: { score: TrustScore }) {
     { label: 'Community', value: score.community_score, color: 'bg-purple-500' },
     { label: 'Maintenance', value: score.maintenance_score, color: 'bg-emerald-500' },
     { label: 'Popularity', value: score.popularity_score, color: 'bg-amber-500' },
+    { label: 'Maturity', value: score.maturity_score ?? 0, color: 'bg-cyan-500' },
   ];
 
   return (

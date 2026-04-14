@@ -201,6 +201,10 @@ def _fetch_github_query(session, meili, query: str, check_apk: bool = False) -> 
                         open_issues=tool.open_issues,
                         last_pushed_at=tool.last_pushed_at,
                         last_commit_at=tool.last_commit_at,
+                        license_name=tool.license,
+                        description=tool.description,
+                        has_topics=bool(tool.topics),
+                        created_at=getattr(tool, 'created_at', None),
                     )
                     upsert_trust_score(session, tool, scores)
 
@@ -210,6 +214,8 @@ def _fetch_github_query(session, meili, query: str, check_apk: bool = False) -> 
                         open_issues=tool.open_issues,
                         license_name=tool.license,
                         last_pushed_at=tool.last_pushed_at,
+                        description=tool.description,
+                        created_at=getattr(tool, 'created_at', None),
                     )
                     replace_risk_flags(session, tool, flags)
 
@@ -250,6 +256,10 @@ def _fetch_fdroid_apps(session, meili) -> int:
                     open_issues=tool.open_issues,
                     last_pushed_at=tool.last_pushed_at,
                     last_commit_at=tool.last_commit_at,
+                    license_name=tool.license,
+                    description=tool.description,
+                    has_topics=bool(tool.topics),
+                    created_at=getattr(tool, 'created_at', None),
                 )
                 upsert_trust_score(session, tool, scores)
 
@@ -259,6 +269,8 @@ def _fetch_fdroid_apps(session, meili) -> int:
                     open_issues=tool.open_issues,
                     license_name=tool.license,
                     last_pushed_at=tool.last_pushed_at,
+                    description=tool.description,
+                    created_at=getattr(tool, 'created_at', None),
                 )
                 replace_risk_flags(session, tool, flags)
 

@@ -7,6 +7,7 @@ class TrustScoreOut(BaseModel):
     community_score: float
     maintenance_score: float
     popularity_score: float
+    maturity_score: float = 0.0
 
 
 class RiskFlagOut(BaseModel):

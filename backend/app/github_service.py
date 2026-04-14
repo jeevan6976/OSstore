@@ -239,6 +239,7 @@ def _normalize_repo(repo: dict) -> dict:
         "owner_avatar": repo.get("owner", {}).get("avatar_url", ""),
         "last_pushed_at": _parse_dt(repo.get("pushed_at")),
         "last_commit_at": _parse_dt(repo.get("updated_at")),
+        "created_at": _parse_dt(repo.get("created_at")),
         "package_name": None,
         "apk_url": None,
         "download_url": None,

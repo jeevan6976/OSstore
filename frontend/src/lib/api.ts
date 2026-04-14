@@ -125,6 +125,12 @@ function repoToTool(repo: GitHubRepo, analysis?: ReleaseAnalysis): Tool {
     repo.open_issues_count,
     repo.pushed_at,
     repo.pushed_at,
+    {
+      licenseName: repo.license?.spdx_id || null,
+      description: repo.description,
+      hasTopics: (repo.topics?.length ?? 0) > 0,
+      createdAt: repo.created_at,
+    },
   );
 
   const risks = computeRiskFlags(
@@ -133,6 +139,10 @@ function repoToTool(repo: GitHubRepo, analysis?: ReleaseAnalysis): Tool {
     repo.open_issues_count,
     repo.license?.spdx_id || null,
     repo.pushed_at,
+    {
+      description: repo.description,
+      createdAt: repo.created_at,
+    },
   );
 
   const hasApk = !!(analysis?.apk_url);
