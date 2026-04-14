@@ -161,184 +161,115 @@ export default async function ToolDetailPage({ params }: PageProps) {
       </div>
 
       {/* Download / Install */}
-      {installs.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 sm:p-8">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-bold text-gray-900">
-              {isFdroid ? 'Download APK' : 'Download & Install'}
-            </h2>
-            {tool.total_downloads > 0 && (
-              <span className="text-xs text-gray-400 font-medium">
-                {formatNum(tool.total_downloads)} total downloads
-              </span>
-            )}
-          </div>
+      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 sm:p-8">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-gray-900">
+            {isFdroid ? 'Download' : 'Download & Install'}
+          </h2>
+          {tool.total_downloads > 0 && (
+            <span className="text-xs text-gray-400">{formatNum(tool.total_downloads)} downloads</span>
+          )}
+        </div>
 
-          {/* Primary download — biggest / most relevant asset */}
-          {(() => {
-            const primary = installs.find((o) => o.fileType !== 'web') || installs[0];
-            if (!primary) return null;
-            const isWeb = primary.fileType === 'web';
-            const href = isWeb
-              ? primary.url
-              : `/api/download?url=${encodeURIComponent(primary.url)}&filename=${encodeURIComponent(primary.fileName || 'download')}`;
-            return (
-              <a
-                href={href}
-                {...(isWeb ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                className={`group mb-4 flex w-full items-center gap-4 rounded-2xl px-6 py-4 transition-all shadow-sm hover:shadow-md ${primary.color}`}
-              >
-                <span className="text-3xl flex-shrink-0">{primary.icon}</span>
-                <div className="flex-1 min-w-0 text-left">
-                  <div className="font-bold text-base leading-tight">{primary.label}</div>
-                  <div className="text-xs opacity-75 mt-0.5">
-                    {primary.fileName && <span className="font-mono">{primary.fileName}</span>}
-                    {primary.size > 0 && <span> · {formatSize(primary.size)}</span>}
+        {installs.length > 0 ? (
+          <div className="space-y-3">
+            {installs.map((opt, i) => {
+              const isWeb = opt.fileType === 'web';
+              const href = isWeb
+                ? opt.url
+                : `/api/download?url=${encodeURIComponent(opt.url)}&filename=${encodeURIComponent(opt.fileName || 'download')}`;
+              return (
+                <a
+                  key={i}
+                  href={href}
+                  {...(isWeb ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  className="group flex items-center gap-4 rounded-xl border-2 border-gray-200 bg-white px-5 py-4 hover:border-brand-400 hover:bg-brand-50/30 transition-all"
+                >
+                  {/* Platform icon */}
+                  <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-xl">
+                    {opt.icon}
                   </div>
-                </div>
-                {isWeb ? (
-                  <svg className="flex-shrink-0 h-5 w-5 opacity-70 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                  </svg>
-                ) : (
-                  <svg className="flex-shrink-0 h-5 w-5 opacity-70 group-hover:translate-y-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                  </svg>
-                )}
-              </a>
-            );
-          })()}
 
-          {/* Other platform downloads */}
-          {installs.length > 1 && (
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {installs.slice(1).map((opt, i) => {
-                const isWeb = opt.fileType === 'web';
-                const href = isWeb
-                  ? opt.url
-                  : `/api/download?url=${encodeURIComponent(opt.url)}&filename=${encodeURIComponent(opt.fileName || 'download')}`;
-                return (
-                  <a
-                    key={i}
-                    href={href}
-                    {...(isWeb ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                    className="group flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 hover:bg-gray-100 transition-all"
-                  >
-                    <span className="text-xl flex-shrink-0">{opt.icon}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-sm text-gray-800">{opt.label}</div>
-                      {opt.size > 0 && (
-                        <div className="text-xs text-gray-400">{formatSize(opt.size)}</div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-gray-900">{opt.label}</span>
+                      {i === 0 && !isWeb && (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 uppercase tracking-wide">
+                          Recommended
+                        </span>
                       )}
                     </div>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-400">
+                      {opt.fileName && <span className="font-mono truncate max-w-[200px]">{opt.fileName}</span>}
+                      {opt.size > 0 && <span className="flex-shrink-0">{formatSize(opt.size)}</span>}
+                    </div>
+                  </div>
+
+                  {/* Action */}
+                  <div className={`flex-shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
+                    isWeb
+                      ? 'bg-gray-100 text-gray-700 group-hover:bg-gray-200'
+                      : 'bg-brand-600 text-white group-hover:bg-brand-700 shadow-sm'
+                  }`}>
                     {isWeb ? (
-                      <svg className="flex-shrink-0 h-3.5 w-3.5 text-gray-400 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                      </svg>
+                      <>
+                        Open
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        </svg>
+                      </>
                     ) : (
-                      <svg className="flex-shrink-0 h-3.5 w-3.5 text-gray-400 group-hover:translate-y-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                      </svg>
+                      <>
+                        Download
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                      </>
                     )}
-                  </a>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Action links */}
-          <div className="mt-4 flex flex-wrap gap-3 pt-4 border-t border-gray-100">
-            {isFdroid ? (
-              <>
-                <a
-                  href={`https://f-droid.org/en/packages/${tool.full_name}/`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-all"
-                >
-                  📦 View on F-Droid
+                  </div>
                 </a>
-                {tool.url && !tool.url.includes('f-droid.org') && (
-                  <a
-                    href={tool.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-all"
-                  >
-                    🐙 Source Code
-                  </a>
-                )}
-              </>
-            ) : (
-              <>
-                <a
-                  href={tool.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-all"
-                >
-                  🐙 View on GitHub
-                </a>
-                {tool.homepage && tool.homepage !== tool.url && (
-                  <a
-                    href={tool.homepage}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-all"
-                  >
-                    🌐 Homepage
-                  </a>
-                )}
-              </>
-            )}
+              );
+            })}
           </div>
-        </div>
-      )}
-
-      {/* No install options fallback */}
-      {installs.length === 0 && (
-        <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 sm:p-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-3">
-            {isFdroid ? 'App Page' : 'Source Code'}
-          </h2>
-          <p className="text-sm text-gray-500 mb-4">
-            {isFdroid
-              ? 'Visit the F-Droid store page to install this app.'
-              : 'No release binaries found. Build from source or check the project page.'}
+        ) : (
+          <p className="text-sm text-gray-500">
+            {isFdroid ? 'Visit the F-Droid store page to install.' : 'No release binaries found. Build from source.'}
           </p>
-          <div className="flex flex-wrap gap-3">
-            {isFdroid ? (
-              <a
-                href={`https://f-droid.org/en/packages/${tool.full_name}/`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-all"
-              >
-                📦 View on F-Droid
+        )}
+
+        {/* Secondary links */}
+        <div className="mt-5 flex flex-wrap gap-2 pt-4 border-t border-gray-100">
+          {isFdroid ? (
+            <>
+              <a href={`https://f-droid.org/en/packages/${tool.full_name}/`} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-all">
+                📦 F-Droid Store
               </a>
-            ) : (
-              <a
-                href={tool.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-all"
-              >
+              {tool.url && !tool.url.includes('f-droid.org') && (
+                <a href={tool.url} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-all">
+                  🐙 Source Code
+                </a>
+              )}
+            </>
+          ) : (
+            <>
+              <a href={tool.url} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-all">
                 🐙 View on GitHub
               </a>
-            )}
-            {tool.homepage && tool.homepage !== tool.url && (
-              <a
-                href={tool.homepage}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
-              >
-                🌐 Homepage
-              </a>
-            )}
-          </div>
+              {tool.homepage && tool.homepage !== tool.url && (
+                <a href={tool.homepage} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-all">
+                  🌐 Homepage
+                </a>
+              )}
+            </>
+          )}
         </div>
-      )}
+      </div>
+
 
       {/* Content grid */}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -444,16 +375,22 @@ export default async function ToolDetailPage({ params }: PageProps) {
                         {v.size > 0 && <span>{formatSize(v.size)}</span>}
                       </div>
                     </div>
-                    {(v.apk_url || v.download_url) && (
-                      <a
-                        href={v.apk_url || v.download_url || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-shrink-0 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800 transition-all"
-                      >
-                        Download
-                      </a>
-                    )}
+                    {(v.apk_url || v.download_url) && (() => {
+                      const rawUrl = v.apk_url || v.download_url || '';
+                      const filename = rawUrl.split('/').pop() || 'download';
+                      const href = `/api/download?url=${encodeURIComponent(rawUrl)}&filename=${encodeURIComponent(filename)}`;
+                      return (
+                        <a
+                          href={href}
+                          className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-800 transition-all"
+                        >
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                          </svg>
+                          Download
+                        </a>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>

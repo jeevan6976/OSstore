@@ -1,63 +1,55 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-const NAV_LINKS = [
-  { href: '/search?q=stars%3A%3E500', label: 'Discover', match: '/search' },
-  { href: '/apps', label: 'Apps', match: '/apps' },
-  { href: '/apps?source=fdroid', label: 'F-Droid', match: '/apps?source=fdroid' },
+const NAV = [
+  { href: '/apps', label: 'Browse', match: (p: string, s: URLSearchParams) => p === '/apps' && !s.get('source') },
+  { href: '/apps?source=fdroid', label: 'F-Droid', match: (p: string, s: URLSearchParams) => p === '/apps' && s.get('source') === 'fdroid' },
+  { href: '/search', label: 'Search', match: (p: string) => p === '/search' },
 ];
 
-export default function NavBar() {
+function NavInner() {
   const pathname = usePathname();
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const isAISearch = pathname === '/ai-search';
-
-  function isActive(match: string) {
-    if (match === '/apps?source=fdroid') {
-      return pathname === '/apps' && searchParams?.get('source') === 'fdroid';
-    }
-    if (match === '/apps') {
-      return pathname === '/apps' && searchParams?.get('source') !== 'fdroid';
-    }
-    return pathname.startsWith(match);
-  }
+  const searchParams = useSearchParams();
+  const isAI = pathname === '/ai-search';
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/90 backdrop-blur-lg">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+    <nav className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/95 backdrop-blur-lg">
+      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
         {/* Logo */}
-        <div className="flex items-center gap-7">
+        <div className="flex items-center gap-6">
           <a href="/" className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white font-bold text-sm shadow-md shadow-brand-500/20">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white font-bold text-xs shadow-md shadow-brand-500/20">
               OS
             </div>
-            <span className="text-xl font-bold text-gray-900">Store</span>
+            <span className="text-lg font-bold text-gray-900">Store</span>
           </a>
 
           {/* Desktop nav */}
-          <div className="hidden sm:flex items-center gap-1">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${
-                  isActive(link.match)
-                    ? 'bg-brand-50 text-brand-700 font-semibold'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-              >
-                {link.label}
-              </a>
-            ))}
-
-            {/* AI Search — highlighted */}
+          <div className="hidden sm:flex items-center gap-0.5">
+            {NAV.map((link) => {
+              const active = link.match(pathname, searchParams);
+              return (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                    active
+                      ? 'bg-gray-100 text-gray-900 font-semibold'
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  {link.label}
+                </a>
+              );
+            })}
             <a
               href="/ai-search"
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
-                isAISearch
+              className={`ml-1 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                isAI
                   ? 'bg-purple-100 text-purple-700 font-semibold'
-                  : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                  : 'text-gray-500 hover:bg-purple-50 hover:text-purple-700'
               }`}
             >
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -68,21 +60,22 @@ export default function NavBar() {
           </div>
         </div>
 
-        {/* Right side */}
-        <div className="flex items-center gap-2">
-          {/* Mobile AI search icon */}
-          <a
-            href="/ai-search"
-            className="sm:hidden rounded-lg p-2 text-purple-600 hover:bg-purple-50 transition-all"
-            title="AI Search"
-          >
+        {/* Right */}
+        <div className="flex items-center gap-1.5">
+          {/* Mobile: search */}
+          <a href="/search" className="sm:hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 transition-all">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+          </a>
+          {/* Mobile: AI search */}
+          <a href="/ai-search" className="sm:hidden rounded-lg p-2 text-purple-600 hover:bg-purple-50 transition-all">
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
           </a>
-
-          {/* Mobile apps icon */}
-          <a href="/apps" className="sm:hidden rounded-lg p-2 text-gray-600 hover:bg-gray-100 transition-all">
+          {/* Mobile: apps */}
+          <a href="/apps" className="sm:hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 transition-all">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zm0 9.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zm9.75-9.75A2.25 2.25 0 0115.75 3.75H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zm0 9.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
             </svg>
@@ -102,5 +95,15 @@ export default function NavBar() {
         </div>
       </div>
     </nav>
+  );
+}
+
+export default function NavBar() {
+  return (
+    <Suspense fallback={
+      <nav className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/95 h-[57px]" />
+    }>
+      <NavInner />
+    </Suspense>
   );
 }
