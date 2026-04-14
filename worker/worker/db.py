@@ -57,6 +57,7 @@ class TrustScore(Base):
     community_score = Column(Float, default=0.0)
     maintenance_score = Column(Float, default=0.0)
     popularity_score = Column(Float, default=0.0)
+    maturity_score = Column(Float, default=0.0)
     computed_at = Column(DateTime)
 
     tool = relationship("Tool", back_populates="trust_score")
@@ -90,6 +91,7 @@ def _add_columns_if_missing():
         "ALTER TABLE tools ADD COLUMN IF NOT EXISTS app_type VARCHAR(32)",
         "ALTER TABLE tools ADD COLUMN IF NOT EXISTS icon_url VARCHAR(2048)",
         "ALTER TABLE tools ADD COLUMN IF NOT EXISTS latest_version VARCHAR(128)",
+        "ALTER TABLE trust_scores ADD COLUMN IF NOT EXISTS maturity_score FLOAT DEFAULT 0.0",
     ]
     index_statements = [
         "CREATE INDEX IF NOT EXISTS ix_tools_package_name ON tools(package_name)",
