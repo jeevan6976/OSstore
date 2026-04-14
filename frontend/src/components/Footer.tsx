@@ -6,7 +6,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <a href="/" className="flex items-center gap-2.5 mb-3">
-              <img src="/logo.ico" alt="OS Store" className="h-8 w-8 rounded-xl object-contain" />
+              <img src="/logo.ico" alt="OS Store" className="h-11 w-11 rounded-xl object-contain" />
               <span className="font-bold text-gray-900">OS Store</span>
             </a>
             <p className="text-sm text-gray-500 leading-relaxed">

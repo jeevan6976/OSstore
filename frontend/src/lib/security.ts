@@ -20,7 +20,7 @@ export interface ScorecardCheck {
 }
 
 export interface SecurityScan {
-  status: 'clean' | 'warnings' | 'danger' | 'unknown';
+  status: 'clean' | 'warnings' | 'danger';
   scorecard_score: number | null; // 0–10
   scorecard_checks: ScorecardCheck[];
   vulnerabilities: Vulnerability[];
@@ -134,29 +134,31 @@ async function fetchGitHubAdvisories(
 export async function getSecurityScan(
   owner: string,
   repo: string,
-): Promise<SecurityScan> {
+): Promise<SecurityScan | null> {
   const [scorecard, vulns] = await Promise.all([
     fetchScorecard(owner, repo),
     fetchGitHubAdvisories(owner, repo),
   ]);
+
+  const hasScorecard = scorecard !== null;
+
+  // If neither API returned data, there's nothing to show
+  if (!hasScorecard && vulns.length === 0) {
+    return null;
+  }
 
   const hasHighCrit = vulns.some(
     (v) => v.severity === 'critical' || v.severity === 'high',
   );
   const hasMedium = vulns.some((v) => v.severity === 'medium');
   const score = scorecard?.score ?? null;
-  const hasScorecard = scorecard !== null;
 
-  let status: SecurityScan['status'] = 'unknown';
+  let status: SecurityScan['status'] = 'clean';
 
-  if (hasScorecard || vulns.length > 0) {
-    if (hasHighCrit || (score !== null && score < 4)) {
-      status = 'danger';
-    } else if (hasMedium || (score !== null && score < 7)) {
-      status = 'warnings';
-    } else {
-      status = 'clean';
-    }
+  if (hasHighCrit || (score !== null && score < 4)) {
+    status = 'danger';
+  } else if (hasMedium || (score !== null && score < 7)) {
+    status = 'warnings';
   }
 
   return {

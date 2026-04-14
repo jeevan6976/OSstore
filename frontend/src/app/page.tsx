@@ -33,7 +33,7 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMGg2MHY2MEgweiIgZmlsbD0ibm9uZSIvPjxjaXJjbGUgY3g9IjMwIiBjeT0iMzAiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3QgZmlsbD0idXJsKCNnKSIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==')] opacity-40" />
         <div className="relative mx-auto max-w-5xl px-4 py-20 sm:py-28 text-center">
           <div className="mb-6 inline-flex items-center gap-3 rounded-full bg-white/15 backdrop-blur-sm px-4 py-2 text-sm font-medium text-white">
-            <img src="/logo.ico" alt="OSstore" className="h-6 w-6 rounded-lg object-contain" />
+            <img src="/logo.ico" alt="OSstore" className="h-10 w-10 rounded-xl object-contain" />
             Open-Source App Store
           </div>
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
