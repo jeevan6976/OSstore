@@ -21,7 +21,7 @@ function NavInner() {
         <div className="flex items-center gap-6">
           <a href="/" className="flex items-center gap-2.5 flex-shrink-0">
             <img src="/logo.ico" alt="OSstore" className="h-9 w-9 rounded-xl object-contain" />
-            <span className="text-lg font-bold text-gray-900">Store</span>
+            <span className="text-lg font-bold text-gray-900">OS Store</span>
           </a>
 
           {/* Desktop nav */}
