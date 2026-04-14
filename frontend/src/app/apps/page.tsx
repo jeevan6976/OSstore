@@ -39,8 +39,8 @@ export default async function AppsPage({ searchParams }: PageProps) {
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Browse Apps</h1>
-        <p className="text-sm text-gray-500">Open-source apps and tools from F-Droid &amp; GitHub</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">Explore</h1>
+        <p className="text-sm text-gray-500">Open-source apps, tools, APIs and libraries from F-Droid &amp; GitHub</p>
       </div>
 
       {/* Search bar */}

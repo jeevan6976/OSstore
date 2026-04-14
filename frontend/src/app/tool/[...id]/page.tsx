@@ -48,8 +48,8 @@ export default async function ToolDetailPage({ params }: PageProps) {
   const topics = parseTopics(tool.topics);
   const score = tool.trust_score?.overall ?? 0;
   const installs = tool.install_options;
-  const backHref = isFdroid ? '/apps?source=fdroid' : '/search?q=stars%3A%3E100';
-  const backLabel = isFdroid ? '← F-Droid' : '← Back';
+  const backHref = isFdroid ? '/apps?source=fdroid' : '/apps';
+  const backLabel = isFdroid ? '← F-Droid' : '← Explore';
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">

@@ -4,7 +4,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 const NAV = [
-  { href: '/apps', label: 'Browse', match: (p: string, s: URLSearchParams) => p === '/apps' && !s.get('source') },
+  { href: '/apps', label: 'Explore', match: (p: string, s: URLSearchParams) => p === '/apps' && !s.get('source') },
   { href: '/apps?source=fdroid', label: 'F-Droid', match: (p: string, s: URLSearchParams) => p === '/apps' && s.get('source') === 'fdroid' },
   { href: '/search', label: 'Search', match: (p: string) => p === '/search' },
 ];
@@ -20,7 +20,7 @@ function NavInner() {
         {/* Logo */}
         <div className="flex items-center gap-6">
           <a href="/" className="flex items-center gap-2.5 flex-shrink-0">
-            <img src="/logo.ico" alt="OSstore" className="h-9 w-9 rounded-xl object-contain" />
+            <img src="/logo.ico" alt="OS Store" className="h-9 w-9 rounded-xl object-contain" />
             <span className="text-lg font-bold text-gray-900">OS Store</span>
           </a>
 
@@ -60,25 +60,21 @@ function NavInner() {
 
         {/* Right */}
         <div className="flex items-center gap-1.5">
-          {/* Mobile: search */}
           <a href="/search" className="sm:hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 transition-all">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
           </a>
-          {/* Mobile: AI search */}
           <a href="/ai-search" className="sm:hidden rounded-lg p-2 text-purple-600 hover:bg-purple-50 transition-all">
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
           </a>
-          {/* Mobile: apps */}
           <a href="/apps" className="sm:hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 transition-all">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zm0 9.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zm9.75-9.75A2.25 2.25 0 0115.75 3.75H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zm0 9.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
             </svg>
           </a>
-
           <a
             href="https://github.com/jeevan6976/OSstore"
             target="_blank"
@@ -98,9 +94,7 @@ function NavInner() {
 
 export default function NavBar() {
   return (
-    <Suspense fallback={
-      <nav className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/95 h-[57px]" />
-    }>
+    <Suspense fallback={<nav className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/95 h-[57px]" />}>
       <NavInner />
     </Suspense>
   );

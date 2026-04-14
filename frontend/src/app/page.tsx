@@ -3,11 +3,11 @@ import ToolCard from '@/components/ToolCard';
 import { getTrending } from '@/lib/api';
 
 const CATEGORIES = [
-  { name: 'Android Apps', icon: '📱', query: '/apps', desc: 'F-Droid & GitHub APKs' },
+  { name: 'Android Apps', icon: '📱', query: '/apps?source=fdroid', desc: 'F-Droid & GitHub APKs' },
   { name: 'Developer Tools', icon: '🛠️', query: '/search?q=developer+tools', desc: 'CLI, editors, debuggers' },
   { name: 'Privacy & Security', icon: '🔒', query: '/search?q=privacy+security', desc: 'VPNs, encryption, firewalls' },
   { name: 'Self-Hosted', icon: '🏠', query: '/search?q=self-hosted', desc: 'Run your own services' },
-  { name: 'Frameworks', icon: '⚡', query: '/search?q=framework', desc: 'Web, mobile, backend' },
+  { name: 'APIs & Libraries', icon: '📦', query: '/search?q=api+library', desc: 'SDKs, clients, frameworks' },
   { name: 'AI & ML', icon: '🤖', query: '/search?q=machine+learning+AI', desc: 'Models, tools, platforms' },
 ];
 
@@ -37,10 +37,10 @@ export default async function HomePage() {
             Open-Source App Store
           </div>
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
-            Install Open-Source<br />Software You Can Trust
+            Open-Source Apps, Tools<br />&amp; APIs — All in One Place
           </h1>
           <p className="mt-6 text-lg sm:text-xl text-white/80 max-w-2xl mx-auto">
-            Discover apps from F-Droid &amp; GitHub with trust scores, security scanning, and AI-powered recommendations.
+            Discover and install open-source software from F-Droid &amp; GitHub — with trust scores, security scanning, and AI-powered search.
           </p>
           <div className="mt-10 flex justify-center">
             <AISearchBar placeholder="Search apps, tools, libraries..." />
