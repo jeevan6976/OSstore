@@ -20,9 +20,7 @@ function NavInner() {
         {/* Logo */}
         <div className="flex items-center gap-6">
           <a href="/" className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white font-bold text-xs shadow-md shadow-brand-500/20">
-              OS
-            </div>
+            <img src="/logo.ico" alt="OSstore" className="h-9 w-9 rounded-xl object-contain" />
             <span className="text-lg font-bold text-gray-900">Store</span>
           </a>
 

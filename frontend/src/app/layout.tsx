@@ -6,6 +6,11 @@ import Footer from '@/components/Footer';
 export const metadata: Metadata = {
   title: 'OSstore — Open-Source App Store',
   description: 'Discover, explore, and install trusted open-source software with AI-powered search and security scanning.',
+  icons: {
+    icon: '/logo.ico',
+    shortcut: '/logo.ico',
+    apple: '/logo.ico',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
